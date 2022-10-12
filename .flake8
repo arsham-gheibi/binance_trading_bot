@@ -1,0 +1,6 @@
+[flake8]
+
+exclude =
+    env,
+    migrations,
+    settings.py
