@@ -4,6 +4,12 @@ from django.core.cache import cache
 from django.conf import settings
 from app.celery import celery_app
 from core.models import Queue
+from core.endpoints import ACCOUNT_BALANCE
+from core.utils import get_signiture
+from urllib.parse import urlencode
+import requests
+import time
+import json
 
 
 User = get_user_model()
@@ -36,11 +42,27 @@ class Command(BaseCommand):
                     stream_queue = stream_queue.first()
                     notifier_queue = notifier_queue.first()
 
-                    try:
-                        account_balance = session.get_wallet_balance(
-                            coin="USDT")['result']['USDT']['available_balance']
+                    headers = {'X-MBX-APIKEY': user.api_key}
+                    params = {'timestamp': int(time.time() * 1000)}
+                    query_string = urlencode(params)
+                    params['signature'] = get_signiture(
+                        user.api_secret, query_string)
 
-                        if self.balance < account_balance * 2:
+                    res = requests.get(
+                        ACCOUNT_BALANCE,
+                        params=params,
+                        headers=headers
+                    )
+
+                    content = json.loads(res.content.decode('utf-8'))
+
+                    if res.status_code == 200:
+                        for data in content:
+                            if data['asset'] == 'USDT':
+                                available_balance = float(
+                                    data['availableBalance'])
+
+                        if self.balance < available_balance * 2:
                             user.balance = self.balance
                             user.main_queue = main_queue
                             user.stream_queue = stream_queue
@@ -81,7 +103,7 @@ class Command(BaseCommand):
                             self.stdout.write(self.style.ERROR(
                                 'User Balance is more than Available Balance'))
 
-                    except InvalidRequestError:
+                    else:
                         self.stdout.write(self.style.ERROR(
                             'User Credential is not Valid'))
 

@@ -1,8 +1,11 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from app.settings import BINANCE_ENDPOINT
+from core.endpoints import OPEN_ORDERS
+from core.utils import get_signiture
+from urllib.parse import urlencode
+import requests
+import time
 import json
-
 
 User = get_user_model()
 
@@ -19,13 +22,22 @@ class Command(BaseCommand):
 
         try:
             user = User.objects.get(telegram_id=self.telegram_id)
+            headers = {'X-MBX-APIKEY': user.api_key}
+            params = {'timestamp': int(time.time() * 1000)}
+            query_string = urlencode(params)
+            params['signature'] = get_signiture(user.api_secret, query_string)
 
-            try:
-                active_orders = session.get_active_order(
-                    symbol=self.symbol)['result']['data']
-                self.stdout.write(json.dumps(active_orders, indent=4))
+            res = requests.get(
+                OPEN_ORDERS,
+                params=params,
+                headers=headers
+            )
 
-            except InvalidRequestError:
+            if res.status_code == 200:
+                content = json.loads(res.content.decode('utf-8'))
+                self.stdout.write(json.dumps(content, indent=4))
+
+            else:
                 self.stdout.write(self.style.ERROR(
                     'User Credential is not Valid'))
 

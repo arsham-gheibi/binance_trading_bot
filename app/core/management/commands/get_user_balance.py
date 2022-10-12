@@ -1,6 +1,11 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from app.settings import BINANCE_ENDPOINT
+from core.endpoints import ACCOUNT_BALANCE
+from core.utils import get_signiture
+from urllib.parse import urlencode
+import requests
+import time
+import json
 
 
 User = get_user_model()
@@ -16,26 +21,35 @@ class Command(BaseCommand):
 
         try:
             user = User.objects.get(telegram_id=self.telegram_id)
+            headers = {'X-MBX-APIKEY': user.api_key}
+            params = {'timestamp': int(time.time() * 1000)}
+            query_string = urlencode(params)
+            params['signature'] = get_signiture(
+                user.api_secret, query_string)
 
-            try:
-                account_balance = session.get_wallet_balance(
-                    coin="USDT")['result']['USDT']
+            res = requests.get(
+                ACCOUNT_BALANCE,
+                params=params,
+                headers=headers
+            )
 
-                available = account_balance['available_balance']
-                wallet = account_balance['wallet_balance']
+            content = json.loads(res.content.decode('utf-8'))
 
-                messages = [
-                    f'Used Balance: {self.style.NOTICE(user.balance)}',
-                    f'Wallet Balance: {self.style.NOTICE(wallet)}',
-                    f'Available Balance: {self.style.NOTICE(available)}'
-                ]
+            if res.status_code == 200:
+                for data in content:
+                    if data['asset'] == 'USDT':
+                        available = float(
+                            data['availableBalance'])
+                        wallet = float(data['balance'])
 
-                for message in messages:
-                    self.stdout.write(self.style.SUCCESS(message))
+            messages = [
+                f'Used Balance: {self.style.NOTICE(user.balance)}',
+                f'Wallet Balance: {self.style.NOTICE(wallet)}',
+                f'Available Balance: {self.style.NOTICE(available)}'
+            ]
 
-            except InvalidRequestError:
-                self.stdout.write(self.style.ERROR(
-                    'User Credential is not Valid'))
+            for message in messages:
+                self.stdout.write(self.style.SUCCESS(message))
 
         except User.DoesNotExist:
             self.stdout.write(self.style.ERROR(

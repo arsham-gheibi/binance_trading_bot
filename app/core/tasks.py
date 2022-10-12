@@ -9,10 +9,10 @@ from core.utils import order_created_message, order_cancelled_message,\
     order_closed_message, target_created_message, stoploss_set_message,\
     reduce_only_target_message, reduce_only_message, not_reduce_only_message,\
     closed_due_tp, closed_due_manually, blue_circle, green_circle, red_circle,\
-    money_bag, money_with_wings, woman_shrugging, order_creation_failed_message,\
-    get_signiture
+    money_bag, money_with_wings, woman_shrugging,\
+    get_signiture, order_creation_failed_message
 from core.endpoints import EXCHANGE_INFO, SYMBOLS, CHANGE_INITIAL_LEVERAGE,\
-    CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE, CANCEL_OPEN_ORDERS, CANCEL_ACTIVE_ORDER,\
+    CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE, CANCEL_OPEN_ORDERS,\
     USER_DATA_STREAM
 from urllib.parse import urlencode
 import requests
@@ -592,21 +592,20 @@ def notifier(user_id):
 
     def analyze_message(message, bot):
         try:
-            order_id = message['data'][0]['order_id']
-            symbol = message['data'][0]['symbol']
-            side = message['data'][0]['side']
-            price = float(message['data'][0]['price'])
-            qty = float(message['data'][0]['qty'])
-            time_in_force = message['data'][0]['time_in_force']
-            create_type = message['data'][0]['create_type']
-            order_status = message['data'][0]['order_status']
-            reduce_only = message['data'][0]['reduce_only']
+            symbol = message['o']['s']
+            side = message['o']['S']
+            time_in_force = message['o']['f']
+            qty = float(message['o']['q'])
+            price = float(message['o']['p'])
+            create_type = message['o']['x']
+            order_status = message['o']['X']
+            order_id = message['o']['i']
+            reduce_only = message['o']['R']
+            profit = message['o']['rp']
 
-            if order_status == 'Filled':
+            if order_status == 'FILLED':
                 if reduce_only:
                     time.sleep(10)
-                    profit = round(float(session.closed_profit_and_loss(
-                        symbol=symbol)['result']['data'][0]['closed_pnl']), 4)
 
                     if profit == 0:
                         emoji = blue_circle
@@ -618,7 +617,7 @@ def notifier(user_id):
                         emoji = red_circle
                         second_emoji = money_with_wings
 
-                    side = 'Short' if side == 'Buy' else 'Long'
+                    side = 'Short' if side == 'BUY' else 'Long'
                     try:
                         target_order = TargetOrder.objects.get(id=order_id)
                         message = reduce_only_target_message.format(
@@ -655,7 +654,7 @@ def notifier(user_id):
                         )
 
                 elif not reduce_only:
-                    side = 'Longed' if side == 'Buy' else 'Shorted'
+                    side = 'Longed' if side == 'BUY' else 'Shorted'
                     message = not_reduce_only_message.format(
                         user_name=user.user_name,
                         side=side,
@@ -684,8 +683,7 @@ def notifier(user_id):
 
     def on_message(ws, message):
         message = json.loads(message)
-        print(message)
-        # analyze_message(message, bot)
+        analyze_message(message, bot)
 
     url = BINANCE_PRIVATE_STREAM + f'/ws/{listen_key}'
     ws = websocket.WebSocketApp(
