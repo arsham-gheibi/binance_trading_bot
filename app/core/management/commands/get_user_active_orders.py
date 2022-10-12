@@ -21,17 +21,33 @@ class Command(BaseCommand):
         self.symbol = options['symbol'].upper()
 
         try:
+
             user = User.objects.get(telegram_id=self.telegram_id)
             headers = {'X-MBX-APIKEY': user.api_key}
             params = {'timestamp': int(time.time() * 1000)}
-            query_string = urlencode(params)
-            params['signature'] = get_signiture(user.api_secret, query_string)
 
-            res = requests.get(
-                OPEN_ORDERS,
-                params=params,
-                headers=headers
-            )
+            if self.symbol == 'ALL':
+                query_string = urlencode(params)
+                params['signature'] = get_signiture(
+                    user.api_secret, query_string)
+
+                res = requests.get(
+                    OPEN_ORDERS,
+                    params=params,
+                    headers=headers
+                )
+
+            else:
+                params['symbol'] = self.symbol
+                query_string = urlencode(params)
+                params['signature'] = get_signiture(
+                    user.api_secret, query_string)
+
+                res = requests.get(
+                    OPEN_ORDERS,
+                    params=params,
+                    headers=headers
+                )
 
             if res.status_code == 200:
                 content = json.loads(res.content.decode('utf-8'))
