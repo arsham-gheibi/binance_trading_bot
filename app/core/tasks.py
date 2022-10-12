@@ -605,8 +605,6 @@ def notifier(user_id):
 
             if order_status == 'FILLED':
                 if reduce_only:
-                    time.sleep(10)
-
                     if profit == 0:
                         emoji = blue_circle
                         second_emoji = woman_shrugging
