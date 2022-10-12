@@ -20,11 +20,11 @@ class Command(BaseCommand):
         symbols = json.loads(res.content.decode('utf-8'))
 
         for user in users:
-            celery_app.send_task(
-                'core.tasks.user_set_leverage',
-                [user.id, symbols],
-                queue=user.main_queue.name
-            )
+            # celery_app.send_task(
+            #     'core.tasks.user_set_leverage',
+            #     [user.id, symbols],
+            #     queue=user.main_queue.name
+            # )
 
             stream_task = celery_app.send_task(
                 'core.tasks.user_data_stream',

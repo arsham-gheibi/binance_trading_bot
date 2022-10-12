@@ -285,7 +285,7 @@ def cancel_order(user_id, symbol):
         params=params,
         headers=headers
     )
-    content = res.content.decode('utf-8')
+    content = json.loads(res.content.decode('utf-8'))
     cancelled = content['code'] == 200
 
     if cancelled:
@@ -450,7 +450,7 @@ def user_data_stream(user_id):
                                 headers=headers
                             )
 
-                            content = res.content.decode('utf-8')
+                            content = json.loads(res.content.decode('utf-8'))
                             print(content, target.value)
 
                         elif target.num == targets.count():
@@ -475,7 +475,7 @@ def user_data_stream(user_id):
                                 headers=headers
                             )
 
-                            content = res.content.decode('utf-8')
+                            content = json.loads(res.content.decode('utf-8'))
                             print(content)
 
                             params = {
