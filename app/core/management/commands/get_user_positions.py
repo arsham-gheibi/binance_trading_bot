@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 positions = json.loads(res.content.decode('utf-8'))
 
                 for position in positions:
-                    if position['side'] in ('BUY', 'SELL'):
+                    if float(position['entryPrice']) != 0:
                         all_positions.append(position)
 
                 positions = all_positions
