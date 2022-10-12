@@ -434,7 +434,7 @@ def user_data_stream(user_id):
                                 'positionSide': target.signal.position_side,
                                 'type': order.type,
                                 'quantity': qty,
-                                'reduceOnly': False,
+                                'reduceOnly': True,
                                 'price': target.value,
                                 'timeInForce': target.signal.time_in_force,
                                 'timestamp': int(time.time() * 1000)
@@ -460,6 +460,7 @@ def user_data_stream(user_id):
                                 'type': 'TAKE_PROFIT_MARKET',
                                 'stopPrice': target.value,
                                 'closePosition': True,
+                                'reduceOnly': True,
                                 'timeInForce': target.signal.time_in_force,
                                 'priceProtect': True,
                                 'timestamp': int(time.time() * 1000)
@@ -484,6 +485,7 @@ def user_data_stream(user_id):
                                 'type': 'STOP_MARKET',
                                 'stopPrice': target.signal.stop_loss,
                                 'closePosition': True,
+                                'reduceOnly': True,
                                 'timeInForce': target.signal.time_in_force,
                                 'priceProtect': True,
                                 'timestamp': int(time.time() * 1000)
