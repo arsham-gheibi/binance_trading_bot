@@ -594,10 +594,10 @@ def notifier(user_id):
         try:
             symbol = message['o']['s']
             side = message['o']['S']
+            create_type = message['o']['o']
             time_in_force = message['o']['f']
             qty = float(message['o']['q'])
             price = float(message['o']['p'])
-            create_type = message['o']['x']
             order_status = message['o']['X']
             order_id = message['o']['i']
             reduce_only = message['o']['R']
@@ -633,10 +633,10 @@ def notifier(user_id):
                         )
 
                     except TargetOrder.DoesNotExist:
-                        if create_type == 'CreateByTakeProfit':
+                        if create_type == 'TAKE_PROFIT_MARKET':
                             closed_due = closed_due_tp
-                        elif create_type == 'CreateByStopLoss'\
-                                or time_in_force == 'ImmediateOrCancel':
+                        elif create_type == 'STOP_MARKET'\
+                                or time_in_force == 'IOC':
                             closed_due = ''
                         else:
                             closed_due = closed_due_manually
