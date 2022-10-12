@@ -19,7 +19,7 @@ class Command(BaseCommand):
         for symbol in symbols:
             filters = symbol['filters']
             name = symbol['symbol']
-            tick_size = str(filters[0]['tickSize'])
+            tick_size = str(float(filters[0]['tickSize']))
             max_trading_qty = filters[1]['maxQty']
             min_trading_qty = filters[1]['minQty']
             qty_step = str(filters[1]['stepSize'])

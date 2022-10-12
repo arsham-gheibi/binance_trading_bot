@@ -50,7 +50,7 @@ def open_new_position(user_id, signal_id, precision_qty_step):
     content = json.loads(res.content.decode('utf-8'))
     entry_price = float(content[0]['entryPrice'])
 
-    if entry_price != 0:
+    if entry_price > 0:
         quantity = float(content[0]['positionAmt'])
         position_side = content[0]['positionSide']
 
@@ -88,6 +88,19 @@ def open_new_position(user_id, signal_id, precision_qty_step):
             print("Order Didn't Close")
 
         time.sleep(0.5)
+
+    params = {
+        'symbol': signal.symbol,
+        'timestamp': int(time.time() * 1000)
+    }
+
+    query_string = urlencode(params)
+    params['signature'] = get_signiture(user.api_secret, query_string)
+    requests.delete(
+        CANCEL_OPEN_ORDERS,
+        params=params,
+        headers=headers
+    )
 
     # clinet percentage / 100 * balance / entry
 
@@ -162,6 +175,7 @@ def open_new_position(user_id, signal_id, precision_qty_step):
             symbol=signal.symbol,
             user=user.user_name
         ))
+        print(content)
 
 
 @celery_app.task
@@ -402,7 +416,7 @@ def user_data_stream(user_id):
 
             if order_status == 'FILLED':
                 try:
-                    time.sleep(1)
+                    time.sleep(2)
                     order = Order.objects.get(id=order_id)
                     targets = order.signal.target_set.all()
 
@@ -437,6 +451,7 @@ def user_data_stream(user_id):
                             )
 
                             content = res.content.decode('utf-8')
+                            print(content, target.value)
 
                         elif target.num == targets.count():
                             params = {
@@ -461,6 +476,7 @@ def user_data_stream(user_id):
                             )
 
                             content = res.content.decode('utf-8')
+                            print(content)
 
                             params = {
                                 'symbol': target.signal.symbol,
