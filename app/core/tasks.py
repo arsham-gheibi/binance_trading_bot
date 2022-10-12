@@ -416,7 +416,7 @@ def user_data_stream(user_id):
 
             if order_status == 'FILLED':
                 try:
-                    time.sleep(2)
+                    time.sleep(1)
                     order = Order.objects.get(id=order_id)
                     targets = order.signal.target_set.all()
 
