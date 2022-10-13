@@ -662,6 +662,7 @@ def notifier(user_id):
                     )
 
                 for inspector in inspectors:
+                    time.sleep(1)
                     bot.send_message(inspector, message)
 
         except KeyError:
