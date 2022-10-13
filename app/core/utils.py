@@ -160,6 +160,11 @@ def is_signal_cancelled(text):
     return text.lower().__contains__(cancel_message)
 
 
+def is_signal_closed(text):
+    close_message = 'closed at trailing stoploss after reaching take profit'
+    return text.lower().__contains__(close_message)
+
+
 # Emojis
 blue_circle = '&#128309;'
 green_circle = '&#128994;'

@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from app.celery import celery_app
 from core.models import Signal
-from core.utils import create_new_signal, is_signal_cancelled, find_symbol
+from core.utils import create_new_signal, is_signal_cancelled, find_symbol,\
+    is_signal_closed
 from pyrogram import Client
 import uvloop
 import json
@@ -57,6 +58,17 @@ class Command(BaseCommand):
                                 for user in users:
                                     celery_app.send_task(
                                         'core.tasks.cancel_order',
+                                        [user.id, signal.symbol],
+                                        queue=user.main_queue.name)
+
+                                self.stdout.write(self.style.WARNING(
+                                    f'#{signal.symbol} Signal is Cancelled'))
+
+                            elif is_signal_closed(text):
+                                users = User.objects.filter(is_active=True)
+                                for user in users:
+                                    celery_app.send_task(
+                                        'core.tasks.close_order',
                                         [user.id, signal.symbol],
                                         queue=user.main_queue.name)
 

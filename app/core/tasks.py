@@ -326,7 +326,7 @@ def close_order(user_id, symbol):
     content = json.loads(res.content.decode('utf-8'))
     entry_price = float(content[0]['entryPrice'])
 
-    if entry_price != 0:
+    if entry_price > 0:
         quantity = float(content[0]['positionAmt'])
         position_side = content[0]['positionSide']
 
