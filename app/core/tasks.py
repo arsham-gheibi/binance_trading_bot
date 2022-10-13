@@ -597,9 +597,9 @@ def notifier(user_id):
             create_type = message['o']['o']
             time_in_force = message['o']['f']
             qty = float(message['o']['q'])
-            price = float(message['o']['p'])
             order_status = message['o']['X']
             order_id = message['o']['i']
+            price = float(message['o']['L'])
             reduce_only = message['o']['R']
             profit = float(message['o']['rp'])
 
