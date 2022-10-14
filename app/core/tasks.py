@@ -9,8 +9,8 @@ from core.utils import order_created_message, order_cancelled_message,\
     order_closed_message, target_created_message, stoploss_set_message,\
     reduce_only_target_message, reduce_only_message, not_reduce_only_message,\
     closed_due_tp, closed_due_manually, blue_circle, green_circle, red_circle,\
-    money_bag, money_with_wings, woman_shrugging,\
-    get_signiture, order_creation_failed_message
+    money_bag, money_with_wings, woman_shrugging, get_signiture,\
+    order_creation_failed_message, cant_open_position_due_qty
 from core.endpoints import EXCHANGE_INFO, SYMBOLS, CHANGE_INITIAL_LEVERAGE,\
     CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE, CANCEL_OPEN_ORDERS,\
     USER_DATA_STREAM
@@ -111,71 +111,83 @@ def open_new_position(user_id, signal_id, precision_qty_step):
     if quantity_client > signal.precision.max_trading_qty:
         quantity_client = signal.precision.max_trading_qty
 
-    params = {
-        'symbol': signal.symbol,
-        'side': signal.side,
-        'positionSide': signal.position_side,
-        'type': signal.order_type,
-        'quantity': quantity_client,
-        'reduceOnly': signal.reduce_only,
-        'price': signal.entry,
-        'timeInForce': signal.time_in_force,
-        'timestamp': int(time.time() * 1000)
-    }
+    target_qty = round(
+        20 / 100 * quantity_client, signal.precision.qty_step)
 
-    query_string = urlencode(params)
-    params['signature'] = get_signiture(user.api_secret, query_string)
-    res = requests.post(
-        PLACE_NEW_ORDER,
-        params=params,
-        headers=headers
-    )
+    can_open_position = target_qty >= signal.precision.min_trading_qty
 
-    content = json.loads(res.content.decode('utf-8'))
-
-    try:
-        order_status = content['status']
-        order_id = content['orderId']
-
-        Order.objects.create(
-            id=order_id,
-            user=user,
-            signal=signal,
-            type=signal.order_type,
-            qty=quantity_client
-        )
-
-        if order_status == 'NEW':
-            logger.info(order_created_message.format(
-                symbol=signal.symbol,
-                user=user.user_name
-            ))
-
+    if can_open_position:
         params = {
             'symbol': signal.symbol,
-            'countdownTime': 14400000,
+            'side': signal.side,
+            'positionSide': signal.position_side,
+            'type': signal.order_type,
+            'quantity': quantity_client,
+            'reduceOnly': signal.reduce_only,
+            'price': signal.entry,
+            'timeInForce': signal.time_in_force,
             'timestamp': int(time.time() * 1000)
         }
+
         query_string = urlencode(params)
         params['signature'] = get_signiture(user.api_secret, query_string)
         res = requests.post(
-            COUNT_DOWN_CANCEL,
+            PLACE_NEW_ORDER,
             params=params,
             headers=headers
         )
 
-        if res.status_code == 200:
-            logger.info('Cancel Count Down Setted')
+        content = json.loads(res.content.decode('utf-8'))
 
-        else:
-            logger.warn('Cancel Count Down Order Failed')
+        try:
+            order_status = content['status']
+            order_id = content['orderId']
 
-    except KeyError:
-        logger.warn(order_creation_failed_message.format(
-            symbol=signal.symbol,
-            user=user.user_name
-        ))
-        print(content)
+            Order.objects.create(
+                id=order_id,
+                user=user,
+                signal=signal,
+                type=signal.order_type,
+                qty=quantity_client
+            )
+
+            if order_status == 'NEW':
+                logger.info(order_created_message.format(
+                    symbol=signal.symbol,
+                    user=user.user_name
+                ))
+
+            params = {
+                'symbol': signal.symbol,
+                'countdownTime': 14400000,
+                'timestamp': int(time.time() * 1000)
+            }
+            query_string = urlencode(params)
+            params['signature'] = get_signiture(user.api_secret, query_string)
+            res = requests.post(
+                COUNT_DOWN_CANCEL,
+                params=params,
+                headers=headers
+            )
+
+            if res.status_code == 200:
+                logger.info('Cancel Count Down Setted')
+
+            else:
+                logger.warn('Cancel Count Down Order Failed')
+
+        except KeyError:
+            logger.warn(order_creation_failed_message.format(
+                symbol=signal.symbol,
+                user=user.user_name
+            ))
+            print(content)
+    else:
+        logger.info(
+            cant_open_position_due_qty.format(
+                symbol=signal.symbol,
+                user=user.user_name
+            ))
 
 
 @celery_app.task

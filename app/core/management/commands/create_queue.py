@@ -10,10 +10,12 @@ class Command(BaseCommand):
                 name=f'main_queue{queue_number}',
                 is_main=True
             )
+
             Queue.objects.get_or_create(
                 name=f'stream_queue{queue_number}',
                 is_stream=True
             )
+
             Queue.objects.get_or_create(
                 name=f'notifier_queue{queue_number}',
                 is_notifier=True

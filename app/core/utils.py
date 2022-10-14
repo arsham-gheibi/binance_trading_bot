@@ -184,6 +184,8 @@ order_cancelled_message = '#{symbol} has been Cancelled for {user}'
 order_closed_message = '#{symbol} has been Closed for {user}'
 target_created_message = '#{symbol} Target Created for {user}'
 stoploss_set_message = '#{symbol} StopLoss Set for {user}'
+cant_open_position_due_qty =\
+    "#{symbol} Can't Place this Order due Low Quantity {user}"
 
 # Notifier Messages
 reduce_only_target_message = """{emoji}
