@@ -19,10 +19,8 @@ TELEGRAM_LISTENER_TOKEN = settings.TELEGRAM_LISTENER_TOKEN
 class Command(BaseCommand):
     def handle(self, *args, **options):
         async def keep_alive(websocket):
-            while True:
-                await websocket.ping()
-                await websocket.pong()
-                time.sleep(20)
+            pong_waiter = await websocket.ping()
+            await pong_waiter
 
         async def main():
             self.stdout.write(self.style.SUCCESS('Listening for Signals'))
