@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 from app.celery import celery_app
 from core.models import Signal, Target, Precision
-import threading
 import logging
 import hmac
 import hashlib
@@ -195,20 +194,15 @@ def analyze_reply_message(message):
                     )
 
                 logger.info(f'#{signal.symbol} Signal is Cancelled')
-
             else:
                 # Sending Signal as a reply message to another Signal
-                threading.Thread(
-                    target=create_new_signal, args=([text])).start()
+                create_new_signal(text)
         else:
             # Sending Signal as a reply message to some message
-            threading.Thread(
-                target=create_new_signal, args=([text])).start()
-
+            create_new_signal(text)
     except KeyError:
         # Sending Signal as a normal telegram message
-        threading.Thread(
-            target=create_new_signal, args=([text])).start()
+        create_new_signal(text)
 
 
 # Emojis
