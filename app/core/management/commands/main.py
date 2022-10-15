@@ -6,7 +6,6 @@ import asyncio
 import uvloop
 import threading
 import websockets
-import time
 import json
 
 
