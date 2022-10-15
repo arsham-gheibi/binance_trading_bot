@@ -100,7 +100,6 @@ def create_new_signal(text):
         = get_signal_details(text)
 
     if is_signal:
-        print('entry is :', entry)
         try:
             signal = Signal.objects.create(
                 precision=precision,

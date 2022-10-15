@@ -52,7 +52,6 @@ def open_new_position(user_id, signal_id, precision_qty_step):
 
     if entry_price > 0:
         quantity = float(content[0]['positionAmt'])
-        position_side = content[0]['positionSide']
 
         if quantity > 0:
             side = 'SELL'
@@ -62,7 +61,6 @@ def open_new_position(user_id, signal_id, precision_qty_step):
         params = {
             'symbol': signal.symbol,
             'side': side,
-            'positionSide': position_side,
             'type': 'MARKET',
             'quantity': abs(quantity),
             'reduceOnly': True,
@@ -120,10 +118,8 @@ def open_new_position(user_id, signal_id, precision_qty_step):
         params = {
             'symbol': signal.symbol,
             'side': signal.side,
-            'positionSide': signal.position_side,
             'type': signal.order_type,
             'quantity': quantity_client,
-            'reduceOnly': signal.reduce_only,
             'price': signal.entry,
             'timeInForce': signal.time_in_force,
             'timestamp': int(time.time() * 1000)
@@ -340,7 +336,6 @@ def close_order(user_id, symbol):
 
     if entry_price > 0:
         quantity = float(content[0]['positionAmt'])
-        position_side = content[0]['positionSide']
 
         if quantity > 0:
             side = 'SELL'
@@ -350,7 +345,6 @@ def close_order(user_id, symbol):
         params = {
             'symbol': symbol,
             'side': side,
-            'positionSide': position_side,
             'type': 'MARKET',
             'quantity': abs(quantity),
             'reduceOnly': True,
@@ -443,7 +437,6 @@ def user_data_stream(user_id):
                             params = {
                                 'symbol': target.signal.symbol,
                                 'side': target.side,
-                                'positionSide': target.signal.position_side,
                                 'type': order.type,
                                 'quantity': qty,
                                 'reduceOnly': True,
