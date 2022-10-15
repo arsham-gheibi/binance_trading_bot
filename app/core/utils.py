@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 from app.celery import celery_app
 from core.models import Signal, Target, Precision
+import threading
 import logging
 import hmac
 import hashlib
@@ -163,6 +164,51 @@ def is_signal_cancelled(text):
 def is_signal_closed(text):
     close_message = 'closed at trailing stoploss after reaching take profit'
     return text.lower().__contains__(close_message)
+
+
+def analyze_reply_message(message):
+    text = message['text']
+    try:
+        reply_text = message['reply_to_message']['text']
+        symbol = find_symbol(reply_text)
+        signal = Signal.objects.filter(symbol=symbol).first()
+
+        if signal is not None:
+            if is_signal_cancelled(text):
+                users = User.objects.filter(is_active=True)
+                for user in users:
+                    celery_app.send_task(
+                        'core.tasks.cancel_order',
+                        [user.id, signal.symbol],
+                        queue=user.main_queue.name
+                    )
+
+                    logger.info(f'#{signal.symbol} Signal is Cancelled')
+
+            elif is_signal_closed(text):
+                users = User.objects.filter(is_active=True)
+                for user in users:
+                    celery_app.send_task(
+                        'core.tasks.close_order',
+                        [user.id, signal.symbol],
+                        queue=user.main_queue.name
+                    )
+
+                logger.info(f'#{signal.symbol} Signal is Cancelled')
+
+            else:
+                # Sending a Signal as reply message
+                threading.Thread(
+                    target=create_new_signal, args=([text])).start()
+        else:
+            # Sending a Signal as reply message
+            threading.Thread(
+                target=create_new_signal, args=([text])).start()
+
+    except KeyError:
+        # Sending a Signal a normal telegram message
+        threading.Thread(
+            target=create_new_signal, args=([text])).start()
 
 
 # Emojis
