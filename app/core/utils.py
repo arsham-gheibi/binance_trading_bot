@@ -197,16 +197,16 @@ def analyze_reply_message(message):
                 logger.info(f'#{signal.symbol} Signal is Cancelled')
 
             else:
-                # Sending a Signal as reply message
+                # Sending Signal as a reply message to another Signal
                 threading.Thread(
                     target=create_new_signal, args=([text])).start()
         else:
-            # Sending a Signal as reply message
+            # Sending Signal as a reply message to some message
             threading.Thread(
                 target=create_new_signal, args=([text])).start()
 
     except KeyError:
-        # Sending a Signal a normal telegram message
+        # Sending Signal as a normal telegram message
         threading.Thread(
             target=create_new_signal, args=([text])).start()
 
