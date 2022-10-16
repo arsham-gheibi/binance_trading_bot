@@ -33,5 +33,6 @@ class Command(BaseCommand):
                     message = json.loads(res)['message']
                     threading.Thread(
                         target=analyze_reply_message, args=([message])).start()
+
         uvloop.install()
         asyncio.run(main())
