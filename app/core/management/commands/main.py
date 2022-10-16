@@ -23,16 +23,15 @@ class Command(BaseCommand):
 
         async def main():
             self.stdout.write(self.style.SUCCESS('Listening for Signals'))
-            async with websockets.connect(
-                TELEGRAM_LISTENER_WEBSOCKET
-            ) as websocket:
-                asyncio.create_task(keep_alive(websocket))
-                await websocket.send(TELEGRAM_LISTENER_TOKEN)
             while True:
-                res = await websocket.recv()
-                message = json.loads(res)['message']
-                threading.Thread(
-                    target=analyze_reply_message, args=([message])).start()
-
+                async with websockets.connect(
+                    TELEGRAM_LISTENER_WEBSOCKET
+                ) as websocket:
+                    asyncio.create_task(keep_alive(websocket))
+                    await websocket.send(TELEGRAM_LISTENER_TOKEN)
+                    res = await websocket.recv()
+                    message = json.loads(res)['message']
+                    threading.Thread(
+                        target=analyze_reply_message, args=([message])).start()
         uvloop.install()
         asyncio.run(main())
