@@ -17,5 +17,3 @@ CANCEL_OPEN_ORDERS = urljoin(BINANCE_ENDPOINT, '/fapi/v1/allOpenOrders')
 CANCEL_ACTIVE_ORDER = urljoin(BINANCE_ENDPOINT, '/fapi/v1/order')
 ACCOUNT_BALANCE = urljoin(BINANCE_ENDPOINT, '/fapi/v2/balance')
 USER_DATA_STREAM = urljoin(BINANCE_ENDPOINT, '/fapi/v1/listenKey')
-COUNT_DOWN_CANCEL = urljoin(
-    BINANCE_ENDPOINT, '/fapi/v1/countdownCancelAll')

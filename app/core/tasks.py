@@ -10,9 +10,9 @@ from core.utils import order_created_message, order_cancelled_message,\
     closed_due_tp, closed_due_manually, blue_circle, green_circle, red_circle,\
     money_bag, money_with_wings, woman_shrugging, get_signiture,\
     order_creation_failed_message, cant_open_position_due_qty
-from core.endpoints import EXCHANGE_INFO, SYMBOLS, CHANGE_INITIAL_LEVERAGE,\
-    CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE, CANCEL_OPEN_ORDERS,\
-    USER_DATA_STREAM, POSITIONS, PLACE_NEW_ORDER, COUNT_DOWN_CANCEL
+from core.endpoints import CANCEL_ACTIVE_ORDER, EXCHANGE_INFO, SYMBOLS,\
+    CHANGE_INITIAL_LEVERAGE, CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE,\
+    CANCEL_OPEN_ORDERS, USER_DATA_STREAM, POSITIONS, PLACE_NEW_ORDER
 from urllib.parse import urlencode
 import requests
 import logging
@@ -156,24 +156,14 @@ def open_new_position(user_id, signal_id, precision_qty_step):
                     user=user.user_name
                 ))
 
-            params = {
-                'symbol': signal.symbol,
-                'countdownTime': 14400000,
-                'timestamp': int(time.time() * 1000)
-            }
-            query_string = urlencode(params)
-            params['signature'] = get_signiture(user.api_secret, query_string)
-            res = requests.post(
-                COUNT_DOWN_CANCEL,
-                params=params,
-                headers=headers
-            )
+                celery_app.send_task(
+                    'core.tasks.is_filled_or_cancel',
+                    [user.id, order_id, signal.symbol],
+                    countdown=14400,
+                    queue=user.main_queue.name
+                )
 
-            if res.status_code == 200:
-                logger.info('Cancel Count Down Setted')
-
-            else:
-                logger.warn('Cancel Count Down Order Failed')
+            logger.info('Cancel Count Down Setted')
 
         except KeyError:
             logger.warn(order_creation_failed_message.format(
@@ -278,6 +268,27 @@ def user_set_leverage(user_id, symbols):
             params=params,
             headers=headers
         )
+
+
+@celery_app.task
+def is_filled_or_cancel(user_id, order_id, symbol):
+    user = User.objects.get(id=user_id)
+    headers = {'X-MBX-APIKEY': user.api_key}
+    params = {
+        'symbol': symbol,
+        'orderId': order_id,
+        'timestamp': int(time.time() * 1000)
+    }
+
+    query_string = urlencode(params)
+    params['signature'] = get_signiture(user.api_secret, query_string)
+    res = requests.delete(
+        CANCEL_ACTIVE_ORDER,
+        params=params,
+        headers=headers
+    )
+
+    logger.info(f'#{symbol} is_filled_or_cancel {res}')
 
 
 @celery_app.task
