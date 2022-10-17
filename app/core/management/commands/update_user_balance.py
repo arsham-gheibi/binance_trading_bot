@@ -44,9 +44,9 @@ class Command(BaseCommand):
             if res.status_code == 200:
                 for data in content:
                     if data['asset'] == 'USDT':
-                        available_balance = float(data['availableBalance'])
+                        equity = float(data['balance'])
 
-                if self.balance < available_balance * 2:
+                if self.balance < equity * 2:
                     user.balance = self.balance
                     user.usage_percentage = self.usage_percentage
                     user.save()

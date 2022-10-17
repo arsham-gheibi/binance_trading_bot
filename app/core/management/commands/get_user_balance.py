@@ -38,14 +38,13 @@ class Command(BaseCommand):
             if res.status_code == 200:
                 for data in content:
                     if data['asset'] == 'USDT':
-                        available = float(
-                            data['availableBalance'])
-                        wallet = float(data['balance'])
+                        equity = float(data['balance'])
+                        available = float(data['availableBalance'])
 
             messages = [
-                f'Used Balance: {self.style.NOTICE(user.balance)}',
-                f'Wallet Balance: {self.style.NOTICE(wallet)}',
-                f'Available Balance: {self.style.NOTICE(available)}'
+                f'Used: {self.style.NOTICE(user.balance)}',
+                f'Equity: {self.style.NOTICE(equity)}',
+                f'Available: {self.style.NOTICE(available)}'
             ]
 
             for message in messages:
