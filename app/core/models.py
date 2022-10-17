@@ -39,6 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     user_name = models.CharField(max_length=100, unique=True)
     balance = models.FloatField(null=True)
     usage_percentage = models.FloatField(default=2.0)
+    bot_token = models.CharField(max_length=255, null=True)
     main_queue = models.OneToOneField(
         'Queue', models.SET_NULL, related_name=_('main_queue'), null=True)
     stream_queue = models.OneToOneField(

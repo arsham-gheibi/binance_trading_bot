@@ -607,7 +607,11 @@ def notifier(user_id):
             requests.put(USER_DATA_STREAM, headers=headers)
             time.sleep(BINANCE_KEEP_ALIVE_PERIOD)
 
-    bot = BotHandler(TELEGRAM_API_TOKEN)
+    if user.bot_token is not None:
+        bot = BotHandler(user.bot_token)
+    else:
+        bot = BotHandler(TELEGRAM_API_TOKEN)
+
     inspectors = (
         847873714, 104789594,
         1088423022, 1815923016,
