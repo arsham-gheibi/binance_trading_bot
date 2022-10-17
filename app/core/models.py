@@ -77,7 +77,7 @@ class Inspector(models.Model):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
-    code = models.BigIntegerField()
+    code = models.CharField(max_length=255)
     date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
