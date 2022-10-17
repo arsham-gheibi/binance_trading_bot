@@ -617,11 +617,16 @@ def notifier(user_id):
     else:
         bot = BotHandler(TELEGRAM_API_TOKEN)
 
-    inspectors = (
+    inspectors = [
         847873714, 104789594,
         1088423022, 1815923016,
         5736268808, user.telegram_id
-    )
+    ]
+
+    user_inspectors = user.inspector_set.all()
+
+    for inspector in user_inspectors:
+        inspectors.append(inspector.code)
 
     def analyze_message(message, bot):
         try:

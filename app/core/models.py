@@ -54,6 +54,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         ordering = ('-date_added',)
 
+    def __str__(self):
+        return self.user_name
+
 
 class Queue(models.Model):
     name = models.CharField(max_length=20)
@@ -65,6 +68,23 @@ class Queue(models.Model):
 
     class Meta:
         ordering = ('-date_added',)
+
+    def __str__(self):
+        return f'#{self.name} {self.is_available}'
+
+
+class Inspector(models.Model):
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
+    code = models.BigIntegerField()
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-date_added',)
+
+    def __str__(self):
+        return f'{self.user.user_name} {self.code}'
 
 
 class Target(models.Model):
@@ -80,6 +100,9 @@ class Target(models.Model):
 
     class Meta:
         ordering = ('num',)
+
+    def __str__(self):
+        return f'#{self.signal.symbol} {self.num} {self.hit}'
 
 
 class Signal(models.Model):
@@ -103,6 +126,9 @@ class Signal(models.Model):
     class Meta:
         ordering = ('-date_added',)
 
+    def __str__(self):
+        return f'#{self.symbol} {self.order_type}'
+
 
 class Order(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, unique=True)
@@ -118,6 +144,9 @@ class Order(models.Model):
     class Meta:
         ordering = ('-date_added',)
 
+    def __str__(self):
+        return f'#{self.signal.symbol} {self.user.user_name} {self.qty}'
+
 
 class TargetOrder(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, unique=True)
@@ -127,6 +156,9 @@ class TargetOrder(models.Model):
 
     class Meta:
         ordering = ('-date_added',)
+
+    def __str__(self):
+        return f'#{self.target.signal.symbol} {self.target.num}'
 
 
 class Precision(models.Model):
@@ -139,8 +171,8 @@ class Precision(models.Model):
     qty_step = models.IntegerField(null=True)
     date_added = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f'{self.symbol} {self.tick_size} {self.qty_step}'
-
     class Meta:
         ordering = ('-date_added',)
+
+    def __str__(self):
+        return f'#{self.symbol} {self.tick_size} {self.qty_step}'
