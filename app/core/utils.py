@@ -154,14 +154,12 @@ def create_new_signal(text):
             pass
 
 
-def is_signal_cancelled(text):
-    cancel_message = 'target achieved before entering the entry zone'
-    return text.lower().__contains__(cancel_message)
-
-
-def is_signal_closed(text):
+def is_signal_closed_or_cancelled(text):
     close_message = 'closed at trailing stoploss after reaching take profit'
-    return text.lower().__contains__(close_message)
+    cancel_message = 'target achieved before entering the entry zone'
+    return \
+        text.lower().__contains__(close_message) or \
+        text.lower().__contains__(cancel_message)
 
 
 def analyze_reply_message(message):
@@ -172,27 +170,17 @@ def analyze_reply_message(message):
         signal = Signal.objects.filter(symbol=symbol).first()
 
         if signal is not None:
-            if is_signal_cancelled(text):
+            if is_signal_closed_or_cancelled(text):
                 users = User.objects.filter(is_active=True)
                 for user in users:
                     celery_app.send_task(
-                        'core.tasks.cancel_order',
+                        'core.tasks.close_and_cancel_order',
                         [user.id, signal.symbol],
                         queue=user.main_queue.name
                     )
 
-                    logger.info(f'#{signal.symbol} Signal is Cancelled')
-
-            elif is_signal_closed(text):
-                users = User.objects.filter(is_active=True)
-                for user in users:
-                    celery_app.send_task(
-                        'core.tasks.close_order',
-                        [user.id, signal.symbol],
-                        queue=user.main_queue.name
-                    )
-
-                logger.info(f'#{signal.symbol} Signal is Cancelled')
+                    logger.info(
+                        f'#{signal.symbol} Signal is Closed/Cancelled')
             else:
                 # Sending Signal as a reply message to another Signal
                 create_new_signal(text)

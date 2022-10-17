@@ -4,7 +4,6 @@ from app.settings import BINANCE_PRIVATE_STREAM, BINANCE_KEEP_ALIVE_PERIOD,\
     TELEGRAM_API_TOKEN
 from core.models import Order, TargetOrder, Signal, Precision
 from core.telegram_bot import BotHandler
-from core.endpoints import POSITIONS, PLACE_NEW_ORDER, COUNT_DOWN_CANCEL
 from core.utils import order_created_message, order_cancelled_message,\
     order_closed_message, target_created_message, stoploss_set_message,\
     reduce_only_target_message, reduce_only_message, not_reduce_only_message,\
@@ -13,7 +12,7 @@ from core.utils import order_created_message, order_cancelled_message,\
     order_creation_failed_message, cant_open_position_due_qty
 from core.endpoints import EXCHANGE_INFO, SYMBOLS, CHANGE_INITIAL_LEVERAGE,\
     CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE, CANCEL_OPEN_ORDERS,\
-    USER_DATA_STREAM
+    USER_DATA_STREAM, POSITIONS, PLACE_NEW_ORDER, COUNT_DOWN_CANCEL
 from urllib.parse import urlencode
 import requests
 import logging
@@ -318,7 +317,7 @@ def cancel_order(user_id, symbol):
 
 
 @celery_app.task
-def close_order(user_id, symbol):
+def close_and_cancel_order(user_id, symbol):
     user = User.objects.get(id=user_id)
     headers = {'X-MBX-APIKEY': user.api_key}
     params = {
@@ -389,6 +388,19 @@ def close_order(user_id, symbol):
             symbol=symbol,
             user=user.user_name
         ))
+
+    params = {
+        'symbol': symbol,
+        'timestamp': int(time.time() * 1000)
+    }
+
+    query_string = urlencode(params)
+    params['signature'] = get_signiture(user.api_secret, query_string)
+    res = requests.delete(
+        CANCEL_OPEN_ORDERS,
+        params=params,
+        headers=headers
+    )
 
 
 @celery_app.task
