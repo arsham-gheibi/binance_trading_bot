@@ -3,7 +3,15 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from django.conf import settings
+from core.messages import dollar_reduce_only_target_message,\
+    dollar_reduce_only_message, percent_reduce_only_target_message,\
+    percent_reduce_only_message
 import uuid
+
+
+class NotifierMessageChoices(models.TextChoices):
+    DOLLAR = 'DOLLAR'
+    PERCENT = 'PERCENT'
 
 
 class UserManager(BaseUserManager):
@@ -40,6 +48,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     balance = models.FloatField(null=True)
     usage_percentage = models.FloatField(default=2.0)
     bot_token = models.CharField(max_length=255, null=True)
+    notifier_option = models.CharField(
+        max_length=255,
+        choices=NotifierMessageChoices.choices,
+        default=NotifierMessageChoices.DOLLAR
+    )
     main_queue = models.OneToOneField(
         'Queue', models.SET_NULL, related_name=_('main_queue'), null=True)
     stream_queue = models.OneToOneField(
@@ -56,6 +69,67 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.user_name
+
+    def get_notifier_message(
+        self, is_target_hitted, emoji,
+        symbol, side, price, qty, profit,
+        second_emoji, target_number, closed_due
+    ):
+        percent_profit = round(profit * 100 / self.balance, 4)
+
+        if is_target_hitted:
+            if self.notifier_option == NotifierMessageChoices.DOLLAR:
+                return dollar_reduce_only_target_message.format(
+                    emoji=emoji,
+                    user_name=self.user_name,
+                    symbol=symbol,
+                    side=side,
+                    target_number=target_number,
+                    price=price,
+                    qty=qty,
+                    profit=profit,
+                    second_emoji=second_emoji
+                )
+
+            else:
+                return percent_reduce_only_target_message.format(
+                    emoji=emoji,
+                    user_name=self.user_name,
+                    symbol=symbol,
+                    side=side,
+                    target_number=target_number,
+                    price=price,
+                    qty=qty,
+                    profit=percent_profit,
+                    second_emoji=second_emoji
+                )
+
+        else:
+            if self.notifier_option == NotifierMessageChoices.DOLLAR:
+                return dollar_reduce_only_message.format(
+                    emoji=emoji,
+                    user_name=self.user_name,
+                    symbol=symbol,
+                    side=side,
+                    price=price,
+                    qty=qty,
+                    profit=profit,
+                    second_emoji=second_emoji,
+                    closed_due=closed_due
+                )
+
+            else:
+                return percent_reduce_only_message.format(
+                    emoji=emoji,
+                    user_name=self.user_name,
+                    symbol=symbol,
+                    side=side,
+                    price=price,
+                    qty=qty,
+                    profit=percent_profit,
+                    second_emoji=second_emoji,
+                    closed_due=closed_due
+                )
 
 
 class Queue(models.Model):

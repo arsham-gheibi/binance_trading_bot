@@ -4,15 +4,15 @@ from app.settings import BINANCE_PRIVATE_STREAM, BINANCE_KEEP_ALIVE_PERIOD,\
     TELEGRAM_API_TOKEN
 from core.models import Order, TargetOrder, Signal, Precision
 from core.telegram_bot import BotHandler
-from core.utils import order_created_message, order_cancelled_message,\
-    order_closed_message, target_created_message, stoploss_set_message,\
-    reduce_only_target_message, reduce_only_message, not_reduce_only_message,\
-    closed_due_tp, closed_due_manually, blue_circle, green_circle, red_circle,\
-    money_bag, money_with_wings, woman_shrugging, get_signiture,\
-    order_creation_failed_message, cant_open_position_due_qty
+from core.utils import get_signiture
 from core.endpoints import ORDER_ENDPOINT, EXCHANGE_INFO, SYMBOLS,\
     CHANGE_INITIAL_LEVERAGE, CHANGE_MARGIN_TYPE, CHANGE_POSITION_MODE,\
     CANCEL_OPEN_ORDERS, USER_DATA_STREAM, POSITIONS
+from core.messages import order_created_message, order_cancelled_message,\
+    order_closed_message, target_created_message, stoploss_set_message,\
+    not_reduce_only_message, closed_due_tp, closed_due_manually, blue_circle,\
+    green_circle, red_circle, money_bag, money_with_wings, woman_shrugging,\
+    order_creation_failed_message, cant_open_position_due_qty
 from urllib.parse import urlencode
 import requests
 import logging
@@ -654,16 +654,17 @@ def notifier(user_id):
                     side = 'Short' if side == 'BUY' else 'Long'
                     try:
                         target_order = TargetOrder.objects.get(id=order_id)
-                        message = reduce_only_target_message.format(
+                        message = user.get_notifier_message(
+                            is_target_hitted=True,
                             emoji=emoji,
-                            user_name=user.user_name,
                             symbol=symbol,
                             side=side,
-                            target_number=target_order.target.num,
                             price=price,
                             qty=qty,
                             profit=profit,
-                            second_emoji=second_emoji
+                            second_emoji=second_emoji,
+                            target_number=target_order.target.num,
+                            closed_due=None
                         )
 
                     except TargetOrder.DoesNotExist:
@@ -674,15 +675,16 @@ def notifier(user_id):
                         else:
                             closed_due = closed_due_manually
 
-                        message = reduce_only_message.format(
+                        message = user.get_notifier_message(
+                            is_target_hitted=False,
                             emoji=emoji,
-                            user_name=user.user_name,
                             symbol=symbol,
                             side=side,
                             price=price,
                             qty=qty,
                             profit=profit,
                             second_emoji=second_emoji,
+                            target_number=None,
                             closed_due=closed_due
                         )
 
