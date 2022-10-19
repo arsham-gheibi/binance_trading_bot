@@ -101,7 +101,8 @@ class Command(BaseCommand):
                     self.style.SUCCESS('All Active Orders Cancelled'))
             else:
                 self.stderr.write(
-                    self.style.ERROR('There is no Active Order with this symbol'))
+                    self.style.ERROR(
+                        'There is no Active Order with this symbol'))
 
         except User.DoesNotExist:
             self.stderr.write(self.style.ERROR('User Does Not Exist'))

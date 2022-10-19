@@ -31,7 +31,6 @@ def open_new_position(user_id, signal_id, precision_qty_step):
     user = User.objects.get(id=user_id)
     signal = Signal.objects.get(id=signal_id)
     headers = {'X-MBX-APIKEY': user.api_key}
-
     params = {
         'symbol': signal.symbol,
         'timestamp': int(time.time() * 1000)
@@ -61,8 +60,8 @@ def open_new_position(user_id, signal_id, precision_qty_step):
         params = {
             'symbol': signal.symbol,
             'side': side,
-            'positionSide': position_side,
             'type': 'MARKET',
+            'positionSide': position_side,
             'quantity': abs(quantity),
             'reduceOnly': True,
             'timestamp': int(time.time() * 1000)
@@ -359,8 +358,8 @@ def close_and_cancel_order(user_id, symbol):
         params = {
             'symbol': symbol,
             'side': side,
-            'type': 'MARKET',
             'positionSide': position_side,
+            'type': 'MARKET',
             'quantity': abs(quantity),
             'reduceOnly': True,
             'timestamp': int(time.time() * 1000)
@@ -571,10 +570,10 @@ def user_data_stream(user_id):
                                 headers=headers
                             )
 
-                        logger.info(target_created_message.format(
-                            symbol=target.signal.symbol,
-                            user=user.user_name
-                        ))
+                            logger.info(target_created_message.format(
+                                symbol=target.signal.symbol,
+                                user=user.user_name
+                            ))
 
                     except TargetOrder.DoesNotExist:
                         logger.warn('THERE IS NO TARGET OR ORDER WITH THIS ID')
@@ -632,8 +631,7 @@ def notifier(user_id):
         try:
             symbol = message['o']['s']
             side = message['o']['S']
-            create_type = message['o']['o']
-            time_in_force = message['o']['f']
+            create_type = message['o']['ot']
             qty = float(message['o']['q'])
             order_status = message['o']['X']
             order_id = message['o']['i']
@@ -671,8 +669,7 @@ def notifier(user_id):
                     except TargetOrder.DoesNotExist:
                         if create_type == 'TAKE_PROFIT_MARKET':
                             closed_due = closed_due_tp
-                        elif create_type == 'STOP_MARKET'\
-                                or time_in_force == 'IOC':
+                        elif create_type == 'STOP_MARKET':
                             closed_due = ''
                         else:
                             closed_due = closed_due_manually
