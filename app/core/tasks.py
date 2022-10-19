@@ -637,7 +637,7 @@ def notifier(user_id):
             order_id = message['o']['i']
             price = float(message['o']['L'])
             reduce_only = message['o']['R']
-            profit = float(message['o']['rp'])
+            profit = round(float(message['o']['rp']), 4)
 
             if order_status == 'FILLED':
                 if reduce_only:
