@@ -29,4 +29,4 @@ class Command(BaseCommand):
                 'User Notifer Updated Successfully'))
 
         except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR('User does not exist'))
+            self.stderr.write('User does not exist')

@@ -29,7 +29,7 @@ class Command(BaseCommand):
                     self.style.SUCCESS('Inspector Deleted Successfully'))
 
             except Inspector.DoesNotExist:
-                self.stderr.write(self.style.ERROR('Inspector does not exist'))
+                self.stderr.write('Inspector does not exist')
 
         except User.DoesNotExist:
-            self.stderr.write(self.style.ERROR('User does not exist'))
+            self.stderr.write('User does not exist')

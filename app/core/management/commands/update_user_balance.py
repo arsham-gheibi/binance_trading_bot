@@ -55,12 +55,11 @@ class Command(BaseCommand):
                         self.style.SUCCESS('User Balance Updated'))
 
                 else:
-                    self.stdout.write(self.style.ERROR(
-                        'User Balance is more than Available Balance'))
+                    self.stderr.write(
+                        'User Balance is more than Available Balance')
 
             else:
-                self.stdout.write(self.style.ERROR(
-                    'User Credential is not Valid'))
+                self.stderr.write('User Credential is not Valid')
 
         else:
-            self.stdout.write(self.style.ERROR('User is not Active'))
+            self.stderr.write('User is not Active')

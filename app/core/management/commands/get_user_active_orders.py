@@ -54,8 +54,7 @@ class Command(BaseCommand):
                 self.stdout.write(json.dumps(content, indent=4))
 
             else:
-                self.stdout.write(self.style.ERROR(
-                    'User Credential is not Valid'))
+                self.stderr.write('User Credential is not Valid')
 
         except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR('User Does Not Exist'))
+            self.stderr.write('User Does Not Exist')

@@ -119,13 +119,12 @@ class Command(BaseCommand):
 
                     else:
                         user.delete()
-                        self.stdout.write(self.style.ERROR(
-                            'User Balance is more than Available Balance'))
+                        self.stderr.write(
+                            'User Balance is more than Available Balance')
 
                 else:
                     user.delete()
-                    self.stdout.write(self.style.ERROR(
-                        'User Credential is not Valid'))
+                    self.stderr.write('User Credential is not Valid')
 
             except IntegrityError:
                 self.stdout.write(self.style.WARNING(

@@ -39,5 +39,4 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('User Disabled'))
 
         else:
-            self.stdout.write(
-                self.style.ERROR_OUTPUT('User is Already Disabled'))
+            self.stderr.write('User is Already Disabled')

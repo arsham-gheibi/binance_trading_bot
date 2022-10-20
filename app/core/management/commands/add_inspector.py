@@ -25,4 +25,4 @@ class Command(BaseCommand):
                 self.style.SUCCESS('Inspector successfully created'))
 
         except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR('User does not exist'))
+            self.stderr.write('User does not exist')

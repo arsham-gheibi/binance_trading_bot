@@ -80,8 +80,7 @@ class Command(BaseCommand):
 
                 self.stdout.write(self.style.SUCCESS('Order Closed'))
             else:
-                self.stderr.write(self.style.ERROR(
-                    'Position does not exist'))
+                self.stderr.write('Position does not exist')
 
             params = {
                 'symbol': self.symbol,
@@ -100,9 +99,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.SUCCESS('All Active Orders Cancelled'))
             else:
-                self.stderr.write(
-                    self.style.ERROR(
-                        'There is no Active Order with this symbol'))
+                self.stderr.write('There is no Active Order with this symbol')
 
         except User.DoesNotExist:
-            self.stderr.write(self.style.ERROR('User Does Not Exist'))
+            self.stderr.write('User Does Not Exist')

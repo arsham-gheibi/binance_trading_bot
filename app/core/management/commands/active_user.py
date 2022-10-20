@@ -99,19 +99,18 @@ class Command(BaseCommand):
                                 'User Activated Successfully'))
 
                         else:
-                            self.stdout.write(self.style.ERROR(
-                                'User Balance is more than Available Balance'))
+                            self.stderr.write(
+                                'User Balance is more than Available Balance')
 
                     else:
-                        self.stdout.write(self.style.ERROR(
-                            'User Credential is not Valid'))
+                        self.stderr.write('User Credential is not Valid')
 
                 else:
                     self.stdout.write(self.style.WARNING(
                         'There is no Available Worker at the Moment'))
             else:
-                self.stdout.write(self.style.WARNING(
-                    'User is Already Active'))
+                self.stdout.write(
+                    self.style.WARNING('User is Already Active'))
 
         except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR('User does not exist'))
+            self.stderr.write('User does not exist')
