@@ -35,17 +35,21 @@ class Command(BaseCommand):
         content = json.loads(res.content.decode('utf-8'))
 
         if res.status_code == 200:
+            print(content)
             for data in content:
                 if data['asset'] == 'USDT':
                     equity = float(data['balance'])
                     available = float(data['availableBalance'])
+                    cross_un_pnl = float(data['crossUnPnl'])
+                    margin = equity + cross_un_pnl
 
             messages = [
                 f'Equity: {self.style.NOTICE(equity)}',
+                f'Margin: {self.style.NOTICE(margin)}',
                 f'Available: {self.style.NOTICE(available)}'
             ]
 
             for message in messages:
                 self.stdout.write(self.style.SUCCESS(message))
         else:
-            self.stderr.write(self.style.ERROR('User Credential is not Valid'))
+            self.stderr.write('User Credential is not Valid')

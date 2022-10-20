@@ -40,16 +40,21 @@ class Command(BaseCommand):
                     if data['asset'] == 'USDT':
                         equity = float(data['balance'])
                         available = float(data['availableBalance'])
+                        cross_un_pnl = float(data['crossUnPnl'])
+                        margin = equity + cross_un_pnl
 
-            messages = [
-                f'Used: {self.style.NOTICE(user.balance)}',
-                f'Equity: {self.style.NOTICE(equity)}',
-                f'Available: {self.style.NOTICE(available)}'
-            ]
+                messages = [
+                    f'Used: {self.style.NOTICE(user.balance)}',
+                    f'Equity: {self.style.NOTICE(equity)}',
+                    f'Margin: {self.style.NOTICE(margin)}',
+                    f'Available: {self.style.NOTICE(available)}'
+                ]
 
-            for message in messages:
-                self.stdout.write(self.style.SUCCESS(message))
+                for message in messages:
+                    self.stdout.write(self.style.SUCCESS(message))
+
+            else:
+                self.stderr.write('Something went wrong. Please try Again')
 
         except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR(
-                'User Does Not Exist'))
+            self.stderr.write('User Does Not Exist')
