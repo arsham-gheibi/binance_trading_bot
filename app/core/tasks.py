@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from app.celery import celery_app
 from app.settings import BINANCE_PRIVATE_STREAM, BINANCE_KEEP_ALIVE_PERIOD,\
-    TELEGRAM_API_TOKEN
+    TELEGRAM_API_TOKEN, TELEGRAM_DEBUG_API_TOKEN
 from core.models import Order, TargetOrder, Signal, Precision
 from core.telegram_bot import BotHandler
 from core.utils import get_signiture
@@ -428,14 +428,36 @@ def user_data_stream(user_id):
             time.sleep(BINANCE_KEEP_ALIVE_PERIOD)
 
     def on_error(ws, error):
-        logger.warn(error)
+        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
+        bot.send_message(
+            847873714,
+            f'{user.user_name} Binance Stream error \n {error}'
+        )
 
     def on_close(ws, close_status_code, close_msg):
+        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
+        bot.send_message(
+            847873714,
+            f'{user.user_name} Binance Stream got closed \n {close_msg}'
+        )
+
         requests.delete(USER_DATA_STREAM, headers=headers)
-        logger.warn('### closed ###')
+        celery_app.send_task(
+            'core.tasks.user_data_stream',
+            [user.id],
+            time_limit=31536000,
+            soft_time_limit=31536000,
+            queue=user.stream_queue.name
+        )
 
     def on_open(ws):
-        logger.info(f'Opened Connection {user.user_name}')
+        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
+        bot.send_message(
+            847873714,
+            f'Opened Stream Connection {user.user_name}'
+        )
+
+        logger.info(f'Opened Stream Connection {user.user_name}')
         threading.Thread(target=keep_alive).start()
 
     def on_message(ws, message):
@@ -616,12 +638,7 @@ def notifier(user_id):
     else:
         bot = BotHandler(TELEGRAM_API_TOKEN)
 
-    inspectors = [
-        847873714, 104789594,
-        1088423022, 1815923016,
-        5736268808, user.telegram_id
-    ]
-
+    inspectors = (847873714, 1815923016, 104789594, user.telegram_id)
     user_inspectors = user.inspector_set.all()
 
     for inspector in user_inspectors:
@@ -706,14 +723,35 @@ def notifier(user_id):
             pass
 
     def on_error(ws, error):
-        bot.send_message(104789594, f'The error \n {error}')
+        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
+        bot.send_message(
+            847873714,
+            f'{user.user_name} Binance Notifer error \n {error}'
+        )
 
     def on_close(ws, close_status_code, close_msg):
-        bot.send_message(104789594, f'I got closed \n {close_msg}')
+        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
+        bot.send_message(
+            847873714,
+            f'{user.user_name} Binance Notifer got closed \n {close_msg}'
+        )
+
         requests.delete(USER_DATA_STREAM, headers=headers)
-        logger.warn('### closed ###')
+        celery_app.send_task(
+            'core.tasks.notifier',
+            [user.id],
+            time_limit=31536000,
+            soft_time_limit=31536000,
+            queue=user.notifier_queue.name
+        )
 
     def on_open(ws):
+        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
+        bot.send_message(
+            847873714,
+            f'Opened Notifier Connection {user.user_name}'
+        )
+
         logger.info(f'Opened Notifier Connection {user.user_name}')
         threading.Thread(target=keep_alive).start()
 
