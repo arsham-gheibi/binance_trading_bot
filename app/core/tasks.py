@@ -687,7 +687,8 @@ def notifier(user_id):
                     except TargetOrder.DoesNotExist:
                         if create_type == 'TAKE_PROFIT_MARKET':
                             closed_due = closed_due_tp
-                        elif create_type == 'STOP_MARKET':
+                        elif create_type == 'STOP_MARKET'\
+                                or create_type == 'MARKET':
                             closed_due = ''
                         else:
                             closed_due = closed_due_manually
