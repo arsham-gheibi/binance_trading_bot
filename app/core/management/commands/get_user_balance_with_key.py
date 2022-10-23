@@ -35,7 +35,6 @@ class Command(BaseCommand):
         content = json.loads(res.content.decode('utf-8'))
 
         if res.status_code == 200:
-            print(content)
             for data in content:
                 if data['asset'] == 'USDT':
                     equity = float(data['balance'])
