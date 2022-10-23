@@ -22,14 +22,9 @@ class Command(BaseCommand):
         try:
             user = User.objects.get(telegram_id=self.telegram_id)
             headers = {'X-MBX-APIKEY': user.api_key}
-            params = {
-                'symbol': self.symbol,
-                'timestamp': int(time.time() * 1000)
-            }
-
+            params = {'timestamp': int(time.time() * 1000)}
             query_string = urlencode(params)
             params['signature'] = get_signiture(user.api_secret, query_string)
-
             res = requests.get(
                 POSITIONS,
                 params=params,
