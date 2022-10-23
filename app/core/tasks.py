@@ -442,13 +442,13 @@ def user_data_stream(user_id):
         )
 
         requests.delete(USER_DATA_STREAM, headers=headers)
-        celery_app.send_task(
-            'core.tasks.user_data_stream',
-            [user.id],
-            time_limit=31536000,
-            soft_time_limit=31536000,
-            queue=user.stream_queue.name
-        )
+        # celery_app.send_task(
+        #     'core.tasks.user_data_stream',
+        #     [user.id],
+        #     time_limit=31536000,
+        #     soft_time_limit=31536000,
+        #     queue=user.stream_queue.name
+        # )
 
     def on_open(ws):
         bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
@@ -738,13 +738,13 @@ def notifier(user_id):
         )
 
         requests.delete(USER_DATA_STREAM, headers=headers)
-        celery_app.send_task(
-            'core.tasks.notifier',
-            [user.id],
-            time_limit=31536000,
-            soft_time_limit=31536000,
-            queue=user.notifier_queue.name
-        )
+        # celery_app.send_task(
+        #     'core.tasks.notifier',
+        #     [user.id],
+        #     time_limit=31536000,
+        #     soft_time_limit=31536000,
+        #     queue=user.notifier_queue.name
+        # )
 
     def on_open(ws):
         bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
