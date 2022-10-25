@@ -14,8 +14,19 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Entry Point for Command"""
         users = User.objects.all()
-        for user in users:
+        active_users = users.filter(is_active=True)
+        deactive_users = users.filter(is_active=False)
+
+        for user in active_users:
             self.stdout.write(self.style.SUCCESS(
+                user_info_message.format(
+                    user_name=user.user_name,
+                    balance=user.balance,
+                    usage_percentage=user.usage_percentage
+                )))
+
+        for user in deactive_users:
+            self.stdout.write(self.style.WARNING(
                 user_info_message.format(
                     user_name=user.user_name,
                     balance=user.balance,

@@ -656,18 +656,19 @@ def notifier(user_id):
             price = float(message['o']['L'])
             reduce_only = message['o']['R']
             profit = round(float(message['o']['rp']), 4)
+            percent_profit = round(profit * 100 / user.balance, 4)
 
             if order_status == 'FILLED':
                 if reduce_only:
-                    if profit == 0:
-                        emoji = blue_circle
-                        second_emoji = woman_shrugging
-                    elif profit > 0:
+                    if percent_profit > 0:
                         emoji = green_circle
                         second_emoji = money_bag
-                    elif profit < 0:
+                    elif percent_profit < -0.06:
                         emoji = red_circle
                         second_emoji = money_with_wings
+                    else:
+                        emoji = blue_circle
+                        second_emoji = woman_shrugging
 
                     side = 'Short' if side == 'BUY' else 'Long'
                     try:
