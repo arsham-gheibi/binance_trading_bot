@@ -673,8 +673,15 @@ def notifier(user_id):
                     side = 'Short' if side == 'BUY' else 'Long'
                     try:
                         target_order = TargetOrder.objects.get(id=order_id)
+                        if target_order.target.num == 4:
+                            is_target_hitted = False
+                            closed_due = closed_due_tp
+                        else:
+                            is_target_hitted = True
+                            closed_due = None
+
                         message = user.get_notifier_message(
-                            is_target_hitted=True,
+                            is_target_hitted=is_target_hitted,
                             emoji=emoji,
                             symbol=symbol,
                             side=side,
@@ -683,7 +690,7 @@ def notifier(user_id):
                             profit=profit,
                             second_emoji=second_emoji,
                             target_number=target_order.target.num,
-                            closed_due=None
+                            closed_due=closed_due
                         )
 
                     except TargetOrder.DoesNotExist:
