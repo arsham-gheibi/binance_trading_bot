@@ -124,13 +124,13 @@ def create_new_signal(text):
             for target_value in targets:
                 num += 1
                 if num == 1:
-                    percent = 30
+                    percent = 50
                 elif num == 2:
-                    percent = 20
+                    percent = 25
                 elif num == 3:
-                    percent = 30
+                    percent = 15
                 elif num == 4:
-                    percent = 30
+                    percent = 10
                 else:
                     percent = 0
 

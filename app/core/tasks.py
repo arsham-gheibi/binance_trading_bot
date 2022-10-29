@@ -109,7 +109,7 @@ def open_new_position(user_id, signal_id, precision_qty_step):
         quantity_client = signal.precision.max_trading_qty
 
     target_qty = round(
-        20 / 100 * quantity_client, signal.precision.qty_step)
+        15 / 100 * quantity_client, signal.precision.qty_step)
 
     can_open_position = target_qty >= signal.precision.min_trading_qty
 
