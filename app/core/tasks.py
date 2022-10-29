@@ -30,151 +30,152 @@ logger = logging.getLogger(__name__)
 def open_new_position(user_id, signal_id, precision_qty_step):
     user = User.objects.get(id=user_id)
     signal = Signal.objects.get(id=signal_id)
-    headers = {'X-MBX-APIKEY': user.api_key}
-    params = {
-        'symbol': signal.symbol,
-        'timestamp': int(time.time() * 1000)
-    }
-
-    query_string = urlencode(params)
-    params['signature'] = get_signiture(user.api_secret, query_string)
-
-    res = requests.get(
-        POSITIONS,
-        params=params,
-        headers=headers
-    )
-
-    content = json.loads(res.content.decode('utf-8'))
-    entry_price = float(content[0]['entryPrice'])
-
-    if entry_price > 0:
-        quantity = float(content[0]['positionAmt'])
-        position_side = content[0]['positionSide']
-
-        if quantity > 0:
-            side = 'SELL'
-        elif quantity < 0:
-            side = 'BUY'
-
+    if not signal.precision.is_blacklisted:
+        headers = {'X-MBX-APIKEY': user.api_key}
         params = {
             'symbol': signal.symbol,
-            'side': side,
-            'type': 'MARKET',
-            'positionSide': position_side,
-            'quantity': abs(quantity),
-            'reduceOnly': True,
             'timestamp': int(time.time() * 1000)
         }
 
         query_string = urlencode(params)
         params['signature'] = get_signiture(user.api_secret, query_string)
-        res = requests.post(
-            ORDER_ENDPOINT,
+
+        res = requests.get(
+            POSITIONS,
             params=params,
             headers=headers
         )
 
         content = json.loads(res.content.decode('utf-8'))
+        entry_price = float(content[0]['entryPrice'])
 
-        try:
-            order_status = content['status']
-            order_id = content['orderId']
+        if entry_price > 0:
+            quantity = float(content[0]['positionAmt'])
+            position_side = content[0]['positionSide']
 
-        except KeyError:
-            print("Order Didn't Close")
+            if quantity > 0:
+                side = 'SELL'
+            elif quantity < 0:
+                side = 'BUY'
 
-        time.sleep(0.5)
+            params = {
+                'symbol': signal.symbol,
+                'side': side,
+                'type': 'MARKET',
+                'positionSide': position_side,
+                'quantity': abs(quantity),
+                'reduceOnly': True,
+                'timestamp': int(time.time() * 1000)
+            }
 
-    params = {
-        'symbol': signal.symbol,
-        'timestamp': int(time.time() * 1000)
-    }
-
-    query_string = urlencode(params)
-    params['signature'] = get_signiture(user.api_secret, query_string)
-    requests.delete(
-        CANCEL_OPEN_ORDERS,
-        params=params,
-        headers=headers
-    )
-
-    # clinet percentage / 100 * balance / entry
-
-    quantity_client = round(
-        (user.usage_percentage / 100 * user.balance)
-        * 10 / signal.entry, precision_qty_step)
-
-    if quantity_client > signal.precision.max_trading_qty:
-        quantity_client = signal.precision.max_trading_qty
-
-    target_qty = round(
-        15 / 100 * quantity_client, signal.precision.qty_step)
-
-    can_open_position = target_qty >= signal.precision.min_trading_qty
-
-    if can_open_position:
-        params = {
-            'symbol': signal.symbol,
-            'side': signal.side,
-            'positionSide': signal.position_side,
-            'type': signal.order_type,
-            'quantity': quantity_client,
-            'reduceOnly': signal.reduce_only,
-            'price': signal.entry,
-            'timeInForce': signal.time_in_force,
-            'timestamp': int(time.time() * 1000)
-        }
-
-        query_string = urlencode(params)
-        params['signature'] = get_signiture(user.api_secret, query_string)
-        res = requests.post(
-            ORDER_ENDPOINT,
-            params=params,
-            headers=headers
-        )
-
-        content = json.loads(res.content.decode('utf-8'))
-
-        try:
-            order_status = content['status']
-            order_id = content['orderId']
-
-            Order.objects.create(
-                id=order_id,
-                user=user,
-                signal=signal,
-                type=signal.order_type,
-                qty=quantity_client
+            query_string = urlencode(params)
+            params['signature'] = get_signiture(user.api_secret, query_string)
+            res = requests.post(
+                ORDER_ENDPOINT,
+                params=params,
+                headers=headers
             )
 
-            if order_status == 'NEW':
-                logger.info(order_created_message.format(
+            content = json.loads(res.content.decode('utf-8'))
+
+            try:
+                order_status = content['status']
+                order_id = content['orderId']
+
+            except KeyError:
+                print("Order Didn't Close")
+
+            time.sleep(0.5)
+
+        params = {
+            'symbol': signal.symbol,
+            'timestamp': int(time.time() * 1000)
+        }
+
+        query_string = urlencode(params)
+        params['signature'] = get_signiture(user.api_secret, query_string)
+        requests.delete(
+            CANCEL_OPEN_ORDERS,
+            params=params,
+            headers=headers
+        )
+
+        # clinet percentage / 100 * balance / entry
+
+        quantity_client = round(
+            (user.usage_percentage / 100 * user.balance)
+            * 10 / signal.entry, precision_qty_step)
+
+        if quantity_client > signal.precision.max_trading_qty:
+            quantity_client = signal.precision.max_trading_qty
+
+        target_qty = round(
+            15 / 100 * quantity_client, signal.precision.qty_step)
+
+        can_open_position = target_qty >= signal.precision.min_trading_qty
+
+        if can_open_position:
+            params = {
+                'symbol': signal.symbol,
+                'side': signal.side,
+                'positionSide': signal.position_side,
+                'type': signal.order_type,
+                'quantity': quantity_client,
+                'reduceOnly': signal.reduce_only,
+                'price': signal.entry,
+                'timeInForce': signal.time_in_force,
+                'timestamp': int(time.time() * 1000)
+            }
+
+            query_string = urlencode(params)
+            params['signature'] = get_signiture(user.api_secret, query_string)
+            res = requests.post(
+                ORDER_ENDPOINT,
+                params=params,
+                headers=headers
+            )
+
+            content = json.loads(res.content.decode('utf-8'))
+
+            try:
+                order_status = content['status']
+                order_id = content['orderId']
+
+                Order.objects.create(
+                    id=order_id,
+                    user=user,
+                    signal=signal,
+                    type=signal.order_type,
+                    qty=quantity_client
+                )
+
+                if order_status == 'NEW':
+                    logger.info(order_created_message.format(
+                        symbol=signal.symbol,
+                        user=user.user_name
+                    ))
+
+                    celery_app.send_task(
+                        'core.tasks.is_filled_or_cancel',
+                        [user.id, order_id, signal.symbol],
+                        countdown=14400,
+                        queue=user.main_queue.name
+                    )
+
+                logger.info('Cancel Count Down Setted')
+
+            except KeyError:
+                logger.warn(order_creation_failed_message.format(
                     symbol=signal.symbol,
                     user=user.user_name
                 ))
-
-                celery_app.send_task(
-                    'core.tasks.is_filled_or_cancel',
-                    [user.id, order_id, signal.symbol],
-                    countdown=14400,
-                    queue=user.main_queue.name
-                )
-
-            logger.info('Cancel Count Down Setted')
-
-        except KeyError:
-            logger.warn(order_creation_failed_message.format(
-                symbol=signal.symbol,
-                user=user.user_name
-            ))
-            print(content)
-    else:
-        logger.info(
-            cant_open_position_due_qty.format(
-                symbol=signal.symbol,
-                user=user.user_name
-            ))
+                print(content)
+        else:
+            logger.info(
+                cant_open_position_due_qty.format(
+                    symbol=signal.symbol,
+                    user=user.user_name
+                ))
 
 
 @celery_app.task

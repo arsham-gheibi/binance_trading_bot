@@ -243,6 +243,7 @@ class Precision(models.Model):
     max_trading_qty = models.FloatField(null=True)
     min_trading_qty = models.FloatField(null=True)
     qty_step = models.IntegerField(null=True)
+    is_blacklisted = models.BooleanField(default=False)
     date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
