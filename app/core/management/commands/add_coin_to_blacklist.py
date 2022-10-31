@@ -24,5 +24,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.NOTICE(
                     'Coin removed from Blacklist'))
 
+            precision.save()
+
         except Precision.DoesNotExist:
             self.stderr.write('Precision Does Not Exist')
