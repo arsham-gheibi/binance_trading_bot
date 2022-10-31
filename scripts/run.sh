@@ -22,5 +22,5 @@ celery -A app worker -l info -c 1 -n notifier_worker2 -Q notifier_queue2 &
 celery -A app worker -l info -c 1 -n notifier_worker3 -Q notifier_queue3 &
 celery -A app worker -l info -c 1 -n notifier_worker4 -Q notifier_queue4 &
 celery -A app worker -l info -c 1 -n notifier_worker5 -Q notifier_queue5 &
-python manage.py stream &
+python manage.py stream
 python manage.py main
