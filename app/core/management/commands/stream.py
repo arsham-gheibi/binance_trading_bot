@@ -34,18 +34,6 @@ class Command(BaseCommand):
                 queue=user.stream_queue.name
             )
 
-            notifier_task = celery_app.send_task(
-                'core.tasks.notifier',
-                [user.id],
-                time_limit=31536000,
-                soft_time_limit=31536000,
-                queue=user.notifier_queue.name
-            )
-
-            cache.set(
-                user.id,
-                [stream_task.task_id, notifier_task.task_id],
-                31536000
-            )
+            cache.set(user.id, stream_task.task_id, 31536000)
 
         self.stdout.write(self.style.NOTICE('Tasks Setted'))

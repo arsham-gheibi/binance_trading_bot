@@ -57,8 +57,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         'Queue', models.SET_NULL, related_name=_('main_queue'), null=True)
     stream_queue = models.OneToOneField(
         'Queue', models.SET_NULL, related_name=_('stream_queue'), null=True)
-    notifier_queue = models.OneToOneField(
-        'Queue', models.SET_NULL, related_name=_('notifier_queue'), null=True)
     is_active = models.BooleanField(default=True)
     date_added = models.DateTimeField(auto_now_add=True)
     objects = UserManager()
@@ -137,7 +135,6 @@ class Queue(models.Model):
     is_available = models.BooleanField(default=True)
     is_main = models.BooleanField(default=False, editable=False)
     is_stream = models.BooleanField(default=False, editable=False)
-    is_notifier = models.BooleanField(default=False, editable=False)
     date_added = models.DateTimeField(auto_now_add=True)
 
     class Meta:

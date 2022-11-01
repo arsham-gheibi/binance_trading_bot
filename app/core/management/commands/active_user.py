@@ -32,15 +32,10 @@ class Command(BaseCommand):
                 queues = Queue.objects.filter(is_available=True)
                 main_queue = queues.filter(is_main=True)
                 stream_queue = queues.filter(is_stream=True)
-                notifier_queue = queues.filter(is_notifier=True)
 
-                if main_queue.count() > 0 and \
-                    stream_queue.count() > 0 and \
-                        notifier_queue.count() > 0:
-
+                if main_queue.count() > 0 and stream_queue.count() > 0:
                     main_queue = main_queue.first()
                     stream_queue = stream_queue.first()
-                    notifier_queue = notifier_queue.first()
 
                     headers = {'X-MBX-APIKEY': user.api_key}
                     params = {'timestamp': int(time.time() * 1000)}
@@ -65,17 +60,14 @@ class Command(BaseCommand):
                             user.balance = self.balance
                             user.main_queue = main_queue
                             user.stream_queue = stream_queue
-                            user.notifier_queue = notifier_queue
                             user.is_active = True
                             user.save()
 
                             main_queue.is_available = False
                             stream_queue.is_available = False
-                            notifier_queue.is_available = False
 
                             main_queue.save()
                             stream_queue.save()
-                            notifier_queue.save()
 
                             stream_task = celery_app.send_task(
                                 'core.tasks.user_data_stream',
@@ -83,17 +75,8 @@ class Command(BaseCommand):
                                 time_limit=31536000,
                                 soft_time_limit=31536000,
                                 queue=user.stream_queue.name)
-                            notifier_task = celery_app.send_task(
-                                'core.tasks.notifier',
-                                [user.id],
-                                time_limit=31536000,
-                                soft_time_limit=31536000,
-                                queue=user.notifier_queue.name)
 
-                            cache.set(
-                                user.id,
-                                [stream_task.task_id, notifier_task.task_id],
-                                31536000)
+                            cache.set(user.id, stream_task.task_id, 31536000)
 
                             self.stdout.write(self.style.SUCCESS(
                                 'User Activated Successfully'))

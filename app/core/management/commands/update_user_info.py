@@ -60,10 +60,8 @@ class Command(BaseCommand):
                         user.usage_percentage = self.usage_percentage
                         user.save()
 
-                        tasks = cache.get(user.id)
-
-                        for task_id in tasks:
-                            celery_app.control.terminate(task_id)
+                        task_id = cache.get(user.id)
+                        celery_app.control.terminate(task_id)
 
                         stream_task = celery_app.send_task(
                             'core.tasks.user_data_stream',
@@ -71,17 +69,8 @@ class Command(BaseCommand):
                             time_limit=31536000,
                             soft_time_limit=31536000,
                             queue=user.stream_queue.name)
-                        notifier_task = celery_app.send_task(
-                            'core.tasks.notifier',
-                            [user.id],
-                            time_limit=31536000,
-                            soft_time_limit=31536000,
-                            queue=user.notifier_queue.name)
 
-                        cache.set(
-                            user.id,
-                            [stream_task.task_id, notifier_task.task_id],
-                            31536000)
+                        cache.set(user.id, stream_task.task_id, 31536000)
 
                         self.stdout.write(self.style.SUCCESS(
                             'User Updated Successfully'))

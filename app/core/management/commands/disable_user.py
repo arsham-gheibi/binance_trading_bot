@@ -19,22 +19,17 @@ class Command(BaseCommand):
         if user.is_active:
             user.main_queue.is_available = True
             user.stream_queue.is_available = True
-            user.notifier_queue.is_available = True
             user.is_active = False
 
             user.main_queue.save()
             user.stream_queue.save()
-            user.notifier_queue.save()
 
             user.main_queue = None
-            user.notifier_queue = None
             user.stream_queue = None
             user.save()
 
-            tasks = cache.get(user.id)
-
-            for task_id in tasks:
-                celery_app.control.terminate(task_id)
+            task_id = cache.get(user.id)
+            celery_app.control.terminate(task_id)
 
             self.stdout.write(self.style.WARNING('User Disabled'))
 

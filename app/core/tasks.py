@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from app.celery import celery_app
 from app.settings import BINANCE_PRIVATE_STREAM, BINANCE_KEEP_ALIVE_PERIOD,\
     TELEGRAM_API_TOKEN, TELEGRAM_DEBUG_API_TOKEN
@@ -423,6 +424,102 @@ def user_data_stream(user_id):
 
     listen_key = json.loads(res.content.decode('utf-8'))['listenKey']
 
+    if user.bot_token is not None:
+        bot = BotHandler(user.bot_token)
+    else:
+        bot = BotHandler(TELEGRAM_API_TOKEN)
+
+    inspectors = [847873714, 1815923016, 104789594, user.telegram_id]
+    user_inspectors = user.inspector_set.all()
+
+    for inspector in user_inspectors:
+        inspectors.append(inspector.code)
+
+    def analyze_message(message, bot):
+        try:
+            symbol = message['o']['s']
+            side = message['o']['S']
+            create_type = message['o']['ot']
+            qty = float(message['o']['q'])
+            order_id = message['o']['i']
+            price = float(message['o']['L'])
+            reduce_only = message['o']['R']
+            profit = round(float(message['o']['rp']), 4)
+            percent_profit = round(profit * 100 / user.balance, 4)
+
+            if reduce_only:
+                if percent_profit > 0:
+                    emoji = green_circle
+                    second_emoji = money_bag
+                elif percent_profit < -0.06:
+                    emoji = red_circle
+                    second_emoji = money_with_wings
+                else:
+                    emoji = blue_circle
+                    second_emoji = woman_shrugging
+
+                side = 'Short' if side == 'BUY' else 'Long'
+                try:
+                    target_order = TargetOrder.objects.get(id=order_id)
+                    if target_order.target.num == 4:
+                        is_target_hitted = False
+                        closed_due = closed_due_tp
+                    else:
+                        is_target_hitted = True
+                        closed_due = None
+
+                    message = user.get_notifier_message(
+                        is_target_hitted=is_target_hitted,
+                        emoji=emoji,
+                        symbol=symbol,
+                        side=side,
+                        price=price,
+                        qty=qty,
+                        profit=profit,
+                        second_emoji=second_emoji,
+                        target_number=target_order.target.num,
+                        closed_due=closed_due
+                    )
+
+                except TargetOrder.DoesNotExist:
+                    if create_type == 'TAKE_PROFIT_MARKET':
+                        closed_due = closed_due_tp
+                    elif create_type == 'STOP_MARKET'\
+                            or create_type == 'MARKET':
+                        closed_due = ''
+                    else:
+                        closed_due = closed_due_manually
+
+                    message = user.get_notifier_message(
+                        is_target_hitted=False,
+                        emoji=emoji,
+                        symbol=symbol,
+                        side=side,
+                        price=price,
+                        qty=qty,
+                        profit=profit,
+                        second_emoji=second_emoji,
+                        target_number=None,
+                        closed_due=closed_due
+                    )
+
+            elif not reduce_only:
+                side = 'Longed' if side == 'BUY' else 'Shorted'
+                message = not_reduce_only_message.format(
+                    user_name=user.user_name,
+                    side=side,
+                    qty=qty,
+                    symbol=symbol,
+                    price=price
+                )
+
+            for inspector in inspectors:
+                time.sleep(1)
+                bot.send_message(inspector, message)
+
+        except KeyError:
+            pass
+
     def keep_alive():
         while True:
             requests.put(USER_DATA_STREAM, headers=headers)
@@ -443,14 +540,18 @@ def user_data_stream(user_id):
         )
 
         requests.delete(USER_DATA_STREAM, headers=headers)
-        time.sleep(15)
-        celery_app.send_task(
+        time.sleep(10)
+        stream_task = celery_app.send_task(
             'core.tasks.user_data_stream',
             [user.id],
             time_limit=31536000,
             soft_time_limit=31536000,
             queue=user.stream_queue.name
         )
+
+        task_id = cache.get(user.id)
+        cache.set(user.id, stream_task.task_id, 31536000)
+        celery_app.control.terminate(task_id)
 
     def on_open(ws):
         bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
@@ -602,176 +703,13 @@ def user_data_stream(user_id):
                     except TargetOrder.DoesNotExist:
                         logger.warn('THERE IS NO TARGET OR ORDER WITH THIS ID')
 
+                analyze_message(message, bot)
+
         except KeyError:
             pass
 
     url = BINANCE_PRIVATE_STREAM + f'/ws/{listen_key}'
 
-    ws = websocket.WebSocketApp(
-        url,
-        headers,
-        on_open,
-        on_message,
-        on_error,
-        on_close
-    )
-
-    ws.run_forever()
-
-
-@celery_app.task
-def notifier(user_id):
-    user = User.objects.get(id=user_id)
-    headers = {'X-MBX-APIKEY': user.api_key}
-    res = requests.post(
-        USER_DATA_STREAM,
-        headers=headers
-    )
-
-    listen_key = json.loads(res.content.decode('utf-8'))['listenKey']
-
-    def keep_alive():
-        while True:
-            requests.put(USER_DATA_STREAM, headers=headers)
-            time.sleep(BINANCE_KEEP_ALIVE_PERIOD)
-
-    if user.bot_token is not None:
-        bot = BotHandler(user.bot_token)
-    else:
-        bot = BotHandler(TELEGRAM_API_TOKEN)
-
-    inspectors = [847873714, 1815923016, 104789594, user.telegram_id]
-    user_inspectors = user.inspector_set.all()
-
-    for inspector in user_inspectors:
-        inspectors.append(inspector.code)
-
-    def analyze_message(message, bot):
-        try:
-            symbol = message['o']['s']
-            side = message['o']['S']
-            create_type = message['o']['ot']
-            qty = float(message['o']['q'])
-            order_status = message['o']['X']
-            order_id = message['o']['i']
-            price = float(message['o']['L'])
-            reduce_only = message['o']['R']
-            profit = round(float(message['o']['rp']), 4)
-            percent_profit = round(profit * 100 / user.balance, 4)
-
-            if order_status == 'FILLED':
-                if reduce_only:
-                    if percent_profit > 0:
-                        emoji = green_circle
-                        second_emoji = money_bag
-                    elif percent_profit < -0.06:
-                        emoji = red_circle
-                        second_emoji = money_with_wings
-                    else:
-                        emoji = blue_circle
-                        second_emoji = woman_shrugging
-
-                    side = 'Short' if side == 'BUY' else 'Long'
-                    try:
-                        target_order = TargetOrder.objects.get(id=order_id)
-                        if target_order.target.num == 4:
-                            is_target_hitted = False
-                            closed_due = closed_due_tp
-                        else:
-                            is_target_hitted = True
-                            closed_due = None
-
-                        message = user.get_notifier_message(
-                            is_target_hitted=is_target_hitted,
-                            emoji=emoji,
-                            symbol=symbol,
-                            side=side,
-                            price=price,
-                            qty=qty,
-                            profit=profit,
-                            second_emoji=second_emoji,
-                            target_number=target_order.target.num,
-                            closed_due=closed_due
-                        )
-
-                    except TargetOrder.DoesNotExist:
-                        if create_type == 'TAKE_PROFIT_MARKET':
-                            closed_due = closed_due_tp
-                        elif create_type == 'STOP_MARKET'\
-                                or create_type == 'MARKET':
-                            closed_due = ''
-                        else:
-                            closed_due = closed_due_manually
-
-                        message = user.get_notifier_message(
-                            is_target_hitted=False,
-                            emoji=emoji,
-                            symbol=symbol,
-                            side=side,
-                            price=price,
-                            qty=qty,
-                            profit=profit,
-                            second_emoji=second_emoji,
-                            target_number=None,
-                            closed_due=closed_due
-                        )
-
-                elif not reduce_only:
-                    side = 'Longed' if side == 'BUY' else 'Shorted'
-                    message = not_reduce_only_message.format(
-                        user_name=user.user_name,
-                        side=side,
-                        qty=qty,
-                        symbol=symbol,
-                        price=price
-                    )
-
-                for inspector in inspectors:
-                    time.sleep(1)
-                    bot.send_message(inspector, message)
-
-        except KeyError:
-            pass
-
-    def on_error(ws, error):
-        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
-        bot.send_message(
-            847873714,
-            f'{user.user_name} Binance Notifer error \n {error}'
-        )
-
-    def on_close(ws, close_status_code, close_msg):
-        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
-        bot.send_message(
-            847873714,
-            f'{user.user_name} Binance Notifer got closed \n {close_msg}'
-        )
-
-        requests.delete(USER_DATA_STREAM, headers=headers)
-        time.sleep(15)
-        celery_app.send_task(
-            'core.tasks.notifier',
-            [user.id],
-            time_limit=31536000,
-            soft_time_limit=31536000,
-            queue=user.notifier_queue.name
-        )
-
-    def on_open(ws):
-        bot = BotHandler(TELEGRAM_DEBUG_API_TOKEN)
-        bot.send_message(
-            847873714,
-            f'Opened Notifier Connection {user.user_name}'
-        )
-
-        logger.info(f'Opened Notifier Connection {user.user_name}')
-        threading.Thread(target=keep_alive).start()
-
-    def on_message(ws, message):
-        message = json.loads(message)
-        analyze_message(message, bot)
-
-    url = BINANCE_PRIVATE_STREAM + f'/ws/{listen_key}'
     ws = websocket.WebSocketApp(
         url,
         headers,
