@@ -89,6 +89,7 @@ class Command(BaseCommand):
                             'core.tasks.user_set_leverage',
                             [user.id, symbols],
                             queue=user.main_queue.name)
+
                         stream_task = celery_app.send_task(
                             'core.tasks.user_data_stream',
                             [user.id],
