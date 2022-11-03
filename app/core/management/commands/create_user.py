@@ -12,6 +12,7 @@ import requests
 import time
 import json
 
+
 User = get_user_model()
 BINANCE_ENDPOINT = settings.BINANCE_ENDPOINT
 

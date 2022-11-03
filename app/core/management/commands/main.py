@@ -1,15 +1,13 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
 from django.conf import settings
 from core.utils import analyze_reply_message
 import asyncio
 import uvloop
 import threading
 import websockets
+import time
 import json
 
-
-User = get_user_model()
 
 TELEGRAM_LISTENER_WEBSOCKET = settings.TELEGRAM_LISTENER_WEBSOCKET
 TELEGRAM_LISTENER_TOKEN = settings.TELEGRAM_LISTENER_TOKEN
@@ -23,6 +21,7 @@ class Command(BaseCommand):
 
         async def main():
             self.stdout.write(self.style.SUCCESS('Listening for Signals'))
+            time.sleep(1)
             while True:
                 async with websockets.connect(
                     TELEGRAM_LISTENER_WEBSOCKET
