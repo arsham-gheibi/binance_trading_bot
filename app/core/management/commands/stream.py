@@ -25,13 +25,14 @@ class Command(BaseCommand):
         )
 
         reserved_tasks = celery_app.control.inspect().reserved()
-        for worker in reserved_tasks:
-            workers_tasks = reserved_tasks[worker]
-            for task in workers_tasks:
-                task_id = task['id']
-                task_type = task['type']
-                if task_type in task_types:
-                    celery_app.control.terminate(task_id)
+        print(reserved_tasks)
+        # for worker in reserved_tasks:
+        #     workers_tasks = reserved_tasks[worker]
+        #     for task in workers_tasks:
+        #         task_id = task['id']
+        #         task_type = task['type']
+        #         if task_type in task_types:
+        #             celery_app.control.terminate(task_id)
 
         for user in users:
             celery_app.send_task(
