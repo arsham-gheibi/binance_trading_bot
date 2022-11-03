@@ -6,6 +6,7 @@ python manage.py wait_for_db
 python manage.py migrate
 python manage.py create_queue
 python manage.py set_precision
+celery -A app purge
 celery -A app beat -l info -s /vol/celerybeat-schedule &
 celery -A app worker -l info -c 1 -n main_worker1 -Q main_queue1 &
 celery -A app worker -l info -c 1 -n main_worker2 -Q main_queue2 &
