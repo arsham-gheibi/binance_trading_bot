@@ -16,15 +16,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.NOTICE('Setting Tasks ..'))
         users = User.objects.filter(is_active=True)
+        print(users)
         res = requests.get(SYMBOLS)
         symbols = json.loads(res.content.decode('utf-8'))
 
-        # Terminating reserved tasks
-        task_types = (
-            'core.tasks.user_data_stream',
-        )
+        # # Terminating reserved tasks
+        # task_types = (
+        #     'core.tasks.user_data_stream',
+        # )
 
-        reserved_tasks = celery_app.control.inspect().reserved()
+        # reserved_tasks = celery_app.control.inspect().reserved()
 
         # for worker in reserved_tasks:
         #     workers_tasks = reserved_tasks[worker]
@@ -34,21 +35,21 @@ class Command(BaseCommand):
         #         if task_type in task_types:
         #             celery_app.control.terminate(task_id)
 
-        for user in users:
-            celery_app.send_task(
-                'core.tasks.user_set_leverage',
-                [user.id, symbols],
-                queue=user.main_queue.name
-            )
+        # for user in users:
+        #     celery_app.send_task(
+        #         'core.tasks.user_set_leverage',
+        #         [user.id, symbols],
+        #         queue=user.main_queue.name
+        #     )
 
-            stream_task = celery_app.send_task(
-                'core.tasks.user_data_stream',
-                [user.id],
-                time_limit=31536000,
-                soft_time_limit=31536000,
-                queue=user.stream_queue.name
-            )
+        #     stream_task = celery_app.send_task(
+        #         'core.tasks.user_data_stream',
+        #         [user.id],
+        #         time_limit=31536000,
+        #         soft_time_limit=31536000,
+        #         queue=user.stream_queue.name
+        #     )
 
-            cache.set(user.id, stream_task.task_id, 31536000)
+        #     cache.set(user.id, stream_task.task_id, 31536000)
 
         self.stdout.write(self.style.NOTICE('Tasks Setted'))
