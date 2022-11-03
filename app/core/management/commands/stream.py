@@ -30,7 +30,6 @@ class Command(BaseCommand):
                 'core.tasks.user_data_stream',
                 [user.id],
                 time_limit=31536000,
-                soft_time_limit=31536000,
                 queue=user.stream_queue.name
             )
 
