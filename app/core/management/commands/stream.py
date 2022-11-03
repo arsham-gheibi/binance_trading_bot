@@ -25,7 +25,7 @@ class Command(BaseCommand):
         )
 
         reserved_tasks = celery_app.control.inspect().reserved()
-        self.stdout.write(reserved_tasks)
+
         # for worker in reserved_tasks:
         #     workers_tasks = reserved_tasks[worker]
         #     for task in workers_tasks:
