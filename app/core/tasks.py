@@ -565,7 +565,6 @@ def user_data_stream(user_id):
     def on_message(ws, message):
         message = json.loads(message)
         print(message)
-
         try:
             order_id = message['o']['i']
             order_status = message['o']['X']
@@ -702,7 +701,8 @@ def user_data_stream(user_id):
                     except TargetOrder.DoesNotExist:
                         logger.warn('THERE IS NO TARGET OR ORDER WITH THIS ID')
 
-                analyze_message(message, bot)
+                finally:
+                    analyze_message(message, bot)
 
         except KeyError:
             pass
