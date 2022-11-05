@@ -539,7 +539,7 @@ def user_data_stream(user_id):
             f'{user.user_name} Binance Stream got closed \n {close_msg}'
         )
 
-        requests.delete(USER_DATA_STREAM, headers=headers)
+        # requests.delete(USER_DATA_STREAM, headers=headers)
         time.sleep(10)
         stream_task = celery_app.send_task(
             'core.tasks.user_data_stream',
