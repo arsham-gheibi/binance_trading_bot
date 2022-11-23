@@ -172,30 +172,33 @@ def is_signal_closed_or_cancelled(text):
 
 
 def analyze_reply_message(message):
-    text = message['text']
     try:
-        reply_text = message['reply_to_message']['text']
-        symbol = find_symbol(reply_text)
-        signal = Signal.objects.filter(symbol=symbol).first()
+        text = message['text']
+        try:
+            reply_text = message['reply_to_message']['text']
+            symbol = find_symbol(reply_text)
+            signal = Signal.objects.filter(symbol=symbol).first()
 
-        if signal is not None:
-            if is_signal_closed_or_cancelled(text):
-                users = User.objects.filter(is_active=True)
-                for user in users:
-                    celery_app.send_task(
-                        'core.tasks.close_and_cancel_order',
-                        [user.id, signal.symbol],
-                        queue=user.main_queue.name
-                    )
+            if signal is not None:
+                if is_signal_closed_or_cancelled(text):
+                    users = User.objects.filter(is_active=True)
+                    for user in users:
+                        celery_app.send_task(
+                            'core.tasks.close_and_cancel_order',
+                            [user.id, signal.symbol],
+                            queue=user.main_queue.name
+                        )
 
-                    logger.info(
-                        f'#{signal.symbol} Signal is Closed/Cancelled')
+                        logger.info(
+                            f'#{signal.symbol} Signal is Closed/Cancelled')
+                else:
+                    # Sending Signal as a reply message to another Signal
+                    create_new_signal(text)
             else:
-                # Sending Signal as a reply message to another Signal
+                # Sending Signal as a reply message to some message
                 create_new_signal(text)
-        else:
-            # Sending Signal as a reply message to some message
+        except KeyError:
+            # Sending Signal as a normal telegram message
             create_new_signal(text)
     except KeyError:
-        # Sending Signal as a normal telegram message
-        create_new_signal(text)
+        pass

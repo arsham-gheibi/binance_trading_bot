@@ -20,8 +20,12 @@ class Command(BaseCommand):
             user = User.objects.get(telegram_id=self.telegram_id)
             if self.notifier_option == 'DOLLAR':
                 user.notifier_option = NotifierMessageChoices.DOLLAR
-            else:
+            elif self.notifier_option == 'PERCENT':
                 user.notifier_option = NotifierMessageChoices.PERCENT
+            # elif self.notifier_option == 'WITH_PERCENT':
+                # user.notifier_option = NotifierMessageChoices.WITH_PERCENT
+            else:
+                self.stderr.write('Option does not exist')
 
             user.save()
 
