@@ -184,7 +184,6 @@ def set_precision():
     logger.info('Setting Precisions ..')
     res = requests.get(EXCHANGE_INFO)
     symbols = json.loads(res.content.decode('utf-8'))['symbols']
-
     for symbol in symbols:
         filters = symbol['filters']
         name = symbol['symbol']
