@@ -46,14 +46,16 @@ def get_signal_details(text):
 
     text = text.split('\n')
     for t in text:
-        t = t.lower()
-        if t.__contains__('#'):
-            t = t.split()[1].replace('#', '').upper()
-            symbol = t
+        try:
+            t = t.lower()
+            if t.__contains__('#'):
+                t = t.split()[1].replace('#', '').upper()
+                symbol = t
+        except KeyError:
+            pass
 
     try:
         precision = Precision.objects.get(symbol=symbol)
-
         for t in text:
             t = t.lower()
             if t.__contains__('long entry zone'):
@@ -87,6 +89,8 @@ def get_signal_details(text):
 
     except Precision.DoesNotExist:
         is_signal = False
+    except KeyError:
+        pass
 
     if len(targets) == 0:
         is_signal = False
