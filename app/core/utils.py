@@ -51,7 +51,9 @@ def get_signal_details(text):
             if t.__contains__('#'):
                 t = t.split()[1].replace('#', '').upper()
                 symbol = t
-        except KeyError or IndexError:
+        except KeyError:
+            pass
+        except IndexError:
             pass
 
     try:
@@ -89,7 +91,9 @@ def get_signal_details(text):
 
     except Precision.DoesNotExist:
         is_signal = False
-    except KeyError or IndexError:
+    except KeyError:
+        pass
+    except IndexError:
         pass
 
     if len(targets) == 0:
