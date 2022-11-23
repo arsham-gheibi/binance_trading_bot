@@ -239,7 +239,6 @@ def user_set_leverage(user_id, symbols):
     )
 
     for symbol in symbols:
-        time.sleep(1)
         name = symbol['symbol']
         params = {
             'symbol': name,
