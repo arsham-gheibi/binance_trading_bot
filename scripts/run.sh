@@ -4,7 +4,6 @@ set -e
 
 python manage.py wait_for_db
 python manage.py migrate
-python manage.py create_queue
 python manage.py set_precision
 celery -A app purge -f -Q stream_queue1,stream_queue2,stream_queue3,stream_queue4,stream_queue5
 celery -A app beat -l info -s /vol/celerybeat-schedule &
