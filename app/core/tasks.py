@@ -40,7 +40,6 @@ def open_new_position(user_id, signal_id, precision_qty_step):
 
         query_string = urlencode(params)
         params['signature'] = get_signiture(user.api_secret, query_string)
-
         res = requests.get(
             POSITIONS,
             params=params,
@@ -337,7 +336,6 @@ def close_and_cancel_order(user_id, symbol):
 
     query_string = urlencode(params)
     params['signature'] = get_signiture(user.api_secret, query_string)
-
     res = requests.get(
         POSITIONS,
         params=params,

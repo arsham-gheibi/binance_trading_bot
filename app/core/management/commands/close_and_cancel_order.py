@@ -31,7 +31,6 @@ class Command(BaseCommand):
 
             query_string = urlencode(params)
             params['signature'] = get_signiture(user.api_secret, query_string)
-
             res = requests.get(
                 POSITIONS,
                 params=params,
@@ -63,6 +62,7 @@ class Command(BaseCommand):
                 query_string = urlencode(params)
                 params['signature'] = get_signiture(
                     user.api_secret, query_string)
+
                 res = requests.post(
                     ORDER_ENDPOINT,
                     params=params,

@@ -14,7 +14,6 @@ celery_app.conf.beat_schedule = {
     'set_precision': {
         'task': 'core.tasks.set_precision',
         'schedule': crontab(minute=0, hour='*/4')
-
     },
     'set_leverage': {
         'task': 'core.tasks.set_leverage',
