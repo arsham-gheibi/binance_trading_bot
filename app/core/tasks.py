@@ -706,8 +706,7 @@ def user_data_stream(user_id):
         except KeyError:
             pass
 
-    url = BINANCE_PRIVATE_STREAM + f'/ws/{listen_key}'
-
+    url = f'{BINANCE_PRIVATE_STREAM}/ws/{listen_key}'
     ws = websocket.WebSocketApp(
         url,
         headers,
