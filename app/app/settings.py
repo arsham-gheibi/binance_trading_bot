@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG = bool(int(os.getenv('DEBUG', 0)))
 
 TELEGRAM_LISTENER_WEBSOCKET = os.getenv('TELEGRAM_LISTENER_WEBSOCKET')
 TELEGRAM_LISTENER_TOKEN = os.getenv('TELEGRAM_LISTENER_TOKEN')
@@ -22,12 +21,12 @@ BROKER_HOST = os.getenv('BROKER_HOST')
 BROKER_PASS = os.getenv('BROKER_PASS')
 
 
-INSTALLED_APPS = [
+INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.auth',
     # Local apps
     'core.apps.CoreConfig'
-]
+)
 
 
 WSGI_APPLICATION = 'app.wsgi.application'
