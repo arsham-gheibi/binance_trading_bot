@@ -22,5 +22,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_queue),
+        migrations.RunPython(create_queue)
     ]
