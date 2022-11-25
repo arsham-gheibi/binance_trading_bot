@@ -13,7 +13,8 @@ from core.messages import order_created_message, order_cancelled_message,\
     order_closed_message, target_created_message, stoploss_set_message,\
     not_reduce_only_message, closed_due_tp, closed_due_manually, blue_circle,\
     green_circle, red_circle, money_bag, money_with_wings, woman_shrugging,\
-    order_creation_failed_message, cant_open_position_due_qty
+    order_creation_failed_message, cant_open_position_due_qty,\
+    cant_open_position_due_black_list
 from urllib.parse import urlencode
 import requests
 import logging
@@ -176,6 +177,13 @@ def open_new_position(user_id, signal_id, precision_qty_step):
                     symbol=signal.symbol,
                     user=user.user_name
                 ))
+
+    else:
+        logger.info(
+            cant_open_position_due_black_list.format(
+                symbol=signal.symbol,
+                user=user.user_name
+            ))
 
 
 @celery_app.task

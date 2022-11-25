@@ -19,6 +19,8 @@ target_created_message = '#{symbol} Target Created for {user}'
 stoploss_set_message = '#{symbol} StopLoss Set for {user}'
 cant_open_position_due_qty =\
     "#{symbol} Can't Place this Order due Low Quantity {user}"
+cant_open_position_due_black_list =\
+    "#{symbol} Can't Place this Order, This Symbol is in Black List {user}"
 
 # Notifier Messages
 
