@@ -32,7 +32,6 @@ class Command(BaseCommand):
             )
 
             positions = json.loads(res.content.decode('utf-8'))
-
             for position in positions:
                 entry_price = float(position['entryPrice'])
                 if entry_price > 0:
