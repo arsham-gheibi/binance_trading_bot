@@ -1,4 +1,4 @@
-FROM redis:7.0.5-alpine3.16
+FROM redis:7.0.5-alpine3.17
 LABEL maintainer="Roboland"
 
 COPY ./run.sh /run.sh
