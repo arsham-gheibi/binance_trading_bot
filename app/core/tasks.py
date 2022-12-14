@@ -441,89 +441,85 @@ def user_data_stream(user_id):
         inspectors.append(inspector.code)
 
     def analyze_message(message, bot):
-        try:
-            symbol = message['o']['s']
-            side = message['o']['S']
-            create_type = message['o']['ot']
-            qty = float(message['o']['q'])
-            order_id = message['o']['i']
-            price = float(message['o']['L'])
-            reduce_only = message['o']['R']
-            profit = round(float(message['o']['rp']), 4)
-            percent_profit = round(profit * 100 / user.balance, 4)
+        symbol = message['o']['s']
+        side = message['o']['S']
+        create_type = message['o']['ot']
+        qty = float(message['o']['q'])
+        order_id = message['o']['i']
+        price = float(message['o']['L'])
+        reduce_only = message['o']['R']
+        profit = round(float(message['o']['rp']), 4)
+        percent_profit = round(profit * 100 / user.balance, 4)
 
-            if reduce_only:
-                if percent_profit > 0:
-                    emoji = green_circle
-                    second_emoji = money_bag
-                elif percent_profit < -0.06:
-                    emoji = red_circle
-                    second_emoji = money_with_wings
+        if reduce_only:
+            if percent_profit > 0:
+                emoji = green_circle
+                second_emoji = money_bag
+            elif percent_profit < -0.06:
+                emoji = red_circle
+                second_emoji = money_with_wings
+            else:
+                emoji = blue_circle
+                second_emoji = woman_shrugging
+
+            side = 'Short' if side == 'BUY' else 'Long'
+            try:
+                target_order = TargetOrder.objects.get(id=order_id)
+                if target_order.target.num == 4:
+                    is_target_hitted = False
+                    closed_due = closed_due_tp
                 else:
-                    emoji = blue_circle
-                    second_emoji = woman_shrugging
+                    is_target_hitted = True
+                    closed_due = None
 
-                side = 'Short' if side == 'BUY' else 'Long'
-                try:
-                    target_order = TargetOrder.objects.get(id=order_id)
-                    if target_order.target.num == 4:
-                        is_target_hitted = False
-                        closed_due = closed_due_tp
-                    else:
-                        is_target_hitted = True
-                        closed_due = None
-
-                    message = user.get_notifier_message(
-                        is_target_hitted=is_target_hitted,
-                        emoji=emoji,
-                        symbol=symbol,
-                        side=side,
-                        price=price,
-                        qty=qty,
-                        profit=profit,
-                        second_emoji=second_emoji,
-                        target_number=target_order.target.num,
-                        closed_due=closed_due
-                    )
-
-                except TargetOrder.DoesNotExist:
-                    if create_type == 'TAKE_PROFIT_MARKET':
-                        closed_due = closed_due_tp
-                    elif create_type == 'STOP_MARKET'\
-                            or create_type == 'MARKET':
-                        closed_due = ''
-                    else:
-                        closed_due = closed_due_manually
-
-                    message = user.get_notifier_message(
-                        is_target_hitted=False,
-                        emoji=emoji,
-                        symbol=symbol,
-                        side=side,
-                        price=price,
-                        qty=qty,
-                        profit=profit,
-                        second_emoji=second_emoji,
-                        target_number=None,
-                        closed_due=closed_due
-                    )
-
-            elif not reduce_only:
-                side = 'Longed' if side == 'BUY' else 'Shorted'
-                message = not_reduce_only_message.format(
-                    user_name=user.user_name,
-                    side=side,
-                    qty=qty,
+                message = user.get_notifier_message(
+                    is_target_hitted=is_target_hitted,
+                    emoji=emoji,
                     symbol=symbol,
-                    price=price
+                    side=side,
+                    price=price,
+                    qty=qty,
+                    profit=profit,
+                    second_emoji=second_emoji,
+                    target_number=target_order.target.num,
+                    closed_due=closed_due
                 )
 
-            for inspector in inspectors:
-                time.sleep(1)
-                bot.send_message(inspector, message)
+            except TargetOrder.DoesNotExist:
+                if create_type == 'TAKE_PROFIT_MARKET':
+                    closed_due = closed_due_tp
+                elif create_type == 'STOP_MARKET'\
+                        or create_type == 'MARKET':
+                    closed_due = ''
+                else:
+                    closed_due = closed_due_manually
 
-        except KeyError:
-            pass
+                message = user.get_notifier_message(
+                    is_target_hitted=False,
+                    emoji=emoji,
+                    symbol=symbol,
+                    side=side,
+                    price=price,
+                    qty=qty,
+                    profit=profit,
+                    second_emoji=second_emoji,
+                    target_number=None,
+                    closed_due=closed_due
+                )
+
+        elif not reduce_only:
+            side = 'Longed' if side == 'BUY' else 'Shorted'
+            message = not_reduce_only_message.format(
+                user_name=user.user_name,
+                side=side,
+                qty=qty,
+                symbol=symbol,
+                price=price
+            )
+
+        for inspector in inspectors:
+            time.sleep(1)
+            bot.send_message(inspector, message)
 
     def keep_alive():
         while True:
@@ -569,8 +565,7 @@ def user_data_stream(user_id):
 
     def on_message(ws, message):
         message = json.loads(message)
-        print(message)
-        try:
+        if message['e'] == 'ORDER_TRADE_UPDATE':
             order_id = message['o']['i']
             order_status = message['o']['X']
 
@@ -709,8 +704,19 @@ def user_data_stream(user_id):
                 finally:
                     analyze_message(message, bot)
 
-        except KeyError:
-            pass
+        elif message['e'] == 'listenKeyExpired':
+            requests.delete(USER_DATA_STREAM, headers=headers)
+            time.sleep(10)
+            stream_task = celery_app.send_task(
+                'core.tasks.user_data_stream',
+                [user.id],
+                time_limit=31536000,
+                queue=user.stream_queue.name
+            )
+
+            task_id = cache.get(user.id)
+            cache.set(user.id, stream_task.task_id, 31536000)
+            celery_app.control.terminate(task_id)
 
     url = f'{BINANCE_PRIVATE_STREAM}/ws/{listen_key}'
     ws = websocket.WebSocketApp(
